@@ -44,6 +44,7 @@ void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl)
 		err_exit("not enough memory available");
 	memcpy(tbl->tbl_name, t_rec_buff + IXFTNAME_OFFSET, tbl_name_len);
 	tbl->tbl_name[tbl_name_len] = '\0';
+	strip_ext(tbl->tbl_name, ".ixf");
 
 	memcpy(buff, t_rec_buff + IXFTCCNT_OFFSET, IXFTCCNT_BYTES);
 	tbl->c_rec_cnt = str_to_long((char *)buff);
@@ -56,3 +57,19 @@ void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl)
 		err_exit("not enough memory available");
 	memcpy(tbl->pk_name, t_rec_buff + IXFTPKNM_OFFSET, pk_name_len);
 }
+
+/* This function strips the trailing `.ixf' of `tbl->dat_name' */
+static void strip_ext(char *name, const char *ext)
+{
+        char *ext_loc;
+        int ext_len;
+        int name_len;
+
+        if (!name || !ext || (ext_len = strlen(ext)) == 0 || (name_len = strlen(name)) <= ext_len)
+                return;
+
+        ext_loc = name + name_len - ext_len;
+        if (strcasecmp(ext_loc, ext) == 0)
+                *ext_loc = '\0';
+}
+
