@@ -108,7 +108,7 @@ int main(void)
 
 	/* print the create table clauses */
 	char buff_creat_tbl[2000];
-	puts(get_create_table_ddl(buff_creat_tbl, tbl, col_head));
+	puts(define_table(buff_creat_tbl, tbl, col_head));
 
 	free_tbl(tbl);
 	free_col_desc(col_head);

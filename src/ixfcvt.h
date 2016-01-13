@@ -45,4 +45,5 @@ void parse_column_descriptor_record(const unsigned char *c_rec_buff,
 				    struct column_descriptor *col_desc);
 void parse_data_record(const unsigned char *record,
 		       const struct column_descriptor *col_desc_head);
-char *get_create_table_ddl(char *buff, const struct table *tbl, const struct column_descriptor *col_head);
+char *define_table(char *buff, const struct table *tbl,
+		   const struct column_descriptor *col_head);

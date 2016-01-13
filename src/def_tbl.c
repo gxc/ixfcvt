@@ -21,29 +21,40 @@
 #include "util.h"
 #include "ixfcvt.h"
 
-/* char buff[2000]; */
-static int desc_col(char *buff, const struct column_descriptor *col);
+static int define_column(char *buff, const struct column_descriptor *col);
 
-char *get_create_table_ddl(char *buff, const struct table *tbl, const struct column_descriptor *col_head)
+/*
+ * This function generates a CREATE TABLE statement from
+ * the table struct and the coloumn descriptor list,
+ * and fill the buff with it.
+ *
+ * Assumes that the buffer is large enough.
+ */
+char *define_table(char *buff, const struct table *tbl,
+		   const struct column_descriptor *col_head)
 {
 	const struct column_descriptor *col;
 	int num_stored;
 
 	num_stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->dat_name);
 	col = col_head->next;
-	while (col)
-	{
-		num_stored += desc_col(buff + num_stored, col);
+	while (col) {
+		num_stored += define_column(buff + num_stored, col);
 		col = col->next;
 	}
 
-	num_stored -= 2; /* eat the last comma and newline */
+	/* TO-DO: implement primary key definition */
+
 	strcpy(buff + num_stored, "\n);\n");
 
 	return buff;
 }
 
-static int desc_col(char *buff, const struct column_descriptor *col)
+/*
+ * This function interprets what a column descriptor struct defines,
+ * returns the number of characters populated into the buffer.
+ */
+static int define_column(char *buff, const struct column_descriptor *col)
 {
 	int cnt;
 
@@ -52,7 +63,8 @@ static int desc_col(char *buff, const struct column_descriptor *col)
 		cnt = sprintf(buff, "\t%s CHAR(%zd)", col->name, col->length);
 		break;
 	case VARCHAR:
-		cnt = sprintf(buff, "\t%s VARCHAR(%zd)", col->name, col->length);
+		cnt =
+		    sprintf(buff, "\t%s VARCHAR(%zd)", col->name, col->length);
 		break;
 	case SMALLINT:
 		cnt = sprintf(buff, "\t%s SMALLINT", col->name);
@@ -61,7 +73,8 @@ static int desc_col(char *buff, const struct column_descriptor *col)
 		cnt = sprintf(buff, "\t%s INTEGER", col->name);
 		break;
 	case DECIMAL:
-		cnt = sprintf(buff, "\t%s DECIMAL(%lu, %lu)", col->name, col->length / 100U, col->length % 100U);
+		cnt = sprintf(buff, "\t%s DECIMAL(%lu, %lu)", col->name,
+			      col->length / 100U, col->length % 100U);
 		break;
 	case TIMESTAMP:
 		cnt = sprintf(buff, "\t%s TIMESTAMP", col->name);
@@ -71,14 +84,14 @@ static int desc_col(char *buff, const struct column_descriptor *col)
 
 	}
 
-	if (col->nullable) {
+	if (!col->nullable) {
+		strcpy(buff + cnt, " NOT NULL");
+		cnt += 9;
+	}
+	if (col->next) {
 		strcpy(buff + cnt, ",\n");
 		cnt += 2;
-	} else {
-		strcpy(buff + cnt, " NOT NULL,\n");
-		cnt += 11;
 	}
 
 	return cnt;
 }
-
