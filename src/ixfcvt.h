@@ -35,8 +35,8 @@ struct column_descriptor {
 };
 
 struct table {
-	char *tbl_name;		/* table name */
-	int c_rec_cnt;		/* number of C records */
+	char *dat_name;		/* original IXF file name */
+	int col_num;		/* number of C records */
 	char *pk_name;		/* name of the primary key */
 };
 
@@ -45,3 +45,4 @@ void parse_column_descriptor_record(const unsigned char *c_rec_buff,
 				    struct column_descriptor *col_desc);
 void parse_data_record(const unsigned char *record,
 		       const struct column_descriptor *col_desc_head);
+char *get_create_table_ddl(char *buff, const struct table *tbl, const struct column_descriptor *col_head);

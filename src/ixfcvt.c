@@ -104,7 +104,11 @@ int main(void)
 	if (rec_len == -1)
 		err_exit("read record content failed, data wrong");
 	else			/* rec_len == 0 */
-		printf("read all!");
+		printf("read all!\n");
+
+	/* print the create table clauses */
+	char buff_creat_tbl[2000];
+	puts(get_create_table_ddl(buff_creat_tbl, tbl, col_head));
 
 	free_tbl(tbl);
 	free_col_desc(col_head);
@@ -117,7 +121,7 @@ int main(void)
 /* free the T record */
 static void free_tbl(struct table *tbl)
 {
-	free(tbl->tbl_name);
+	free(tbl->dat_name);
 	free(tbl->pk_name);
 	free(tbl);
 }
