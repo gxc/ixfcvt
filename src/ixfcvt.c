@@ -91,7 +91,8 @@ int main(void)
 			parse_column_desc_record(buff, col_node);
 			break;
 		case 'D':
-			parse_data_record(buff, col_head);
+			/* parse_data_record(buff, col_head); */
+			data_record_to_sql(buff, col_head);
 			break;
 		case 'A':
 			break;

@@ -14,98 +14,24 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
 #include "util.h"
-#include "ixfcvt.h"
 
-#define IXFDCOLS_OFFSET 8
-#define D_REC_BUFF_SIZE 32780
 #define LOW_NIBBLE 0x0F
 #define HIGH_NIBBLE 0xF0
 #define NEGATIVE_SIGN 0x0D
 #define DIGIT_HIGH_NIBBLE 0x30
 
-static long parse_ixf_integer(const unsigned char *src, size_t bytes);
-static _Bool column_is_null(const unsigned char *null_ind);
 static char *squeeze_zeros(char *decimal);
-static char *decode_packed_decimal(const unsigned char *buff,
-				   size_t data_length);
-
-void parse_data_record(const unsigned char *d_rec_buff,
-		       const struct column_desc *col_desc_head)
-{
-	static unsigned char buff[D_REC_BUFF_SIZE];
-	const unsigned char *walker;	/* walk through d_rec_buff */
-	struct column_desc *col_desc;
-	size_t data_len;
-	char *ascii_dec;
-
-	col_desc = col_desc_head->next;
-	memset(buff, 0x00, D_REC_BUFF_SIZE);
-
-	puts("======== DATA RECORD BEGIN ========");
-	while (col_desc) {
-		walker = d_rec_buff + IXFDCOLS_OFFSET + col_desc->offset;
-		if (col_desc->nullable) {
-			if (column_is_null(walker)) {
-				printf("null");
-				continue;
-			} else {	/* bypass the null indicator */
-				walker += 2;
-			}
-		}
-
-		switch (col_desc->type) {
-		case CHAR:
-			memcpy(buff, walker, col_desc->length);
-			printf("CHAR(%zd): %.*s ", col_desc->length,
-			       (int)col_desc->length, buff);
-			break;
-		case VARCHAR:
-			data_len = (size_t) parse_ixf_integer(walker, 2);
-			memcpy(buff, walker + 2, data_len);
-			printf("VARCHAR(%zd of %zd): %.*s ", data_len,
-			       col_desc->length, (int)data_len, buff);
-			break;
-		case SMALLINT:
-			printf("SMALLINT: %hd ",
-			       (short)parse_ixf_integer(walker,
-							col_desc->length));
-			break;
-		case INTEGER:
-			printf("INTEGER: %ld ",
-			       parse_ixf_integer(walker, col_desc->length));
-			break;
-		case DECIMAL:
-			ascii_dec =
-			    decode_packed_decimal(walker, col_desc->length);
-			printf("DECIMAL: %s ", ascii_dec);
-			free(ascii_dec);
-			break;
-		case TIMESTAMP:
-			memcpy(buff, walker, col_desc->length);
-			printf("TIMESTAMP: %.*s ", (int)col_desc->length, buff);
-			break;
-		default:
-			err_exit
-			    ("DATA RECORD: DB2 data type %d not implenmented",
-			     col_desc->type);
-		}
-		col_desc = col_desc->next;
-	}
-
-	puts("\n========= DATA RECORD END =========");
-}
 
 /*
  * read 2-byte or 4-byte little-endian integer from buffer `src'
  * return the corresponding numeric value of type
  */
-static long parse_ixf_integer(const unsigned char *src, size_t bytes)
+long parse_ixf_integer(const unsigned char *src, size_t bytes)
 {
 	long value;
 	size_t i;
@@ -123,7 +49,7 @@ static long parse_ixf_integer(const unsigned char *src, size_t bytes)
  * Return true if the null indicator represents null, false otherwise.
  * x'0000' for not null, and x'FFFF' for null
  */
-static _Bool column_is_null(const unsigned char *null_ind)
+_Bool column_is_null(const unsigned char *null_ind)
 {
 	return (unsigned short)parse_ixf_integer(null_ind, 2) == 0xFFFF;
 }
@@ -133,8 +59,7 @@ static _Bool column_is_null(const unsigned char *null_ind)
  * allocated ASCII string, and returns a pointer to the new string.
  * `data_length' is the original length specified by IXFCLENG
  */
-static char *decode_packed_decimal(const unsigned char *buff,
-				   size_t data_length)
+char *decode_packed_decimal(const unsigned char *buff, size_t data_length)
 {
 	int precision;
 	int scale;

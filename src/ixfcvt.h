@@ -52,3 +52,5 @@ char *define_table(char *buff, const struct table *tbl,
 		   const struct column_desc *col_head);
 char *format_insert(char *buff, const char *table_name,
 		    const struct column_desc *col_head);
+void data_record_to_sql(const unsigned char *d_rec_buff,
+		        const struct column_desc *col_head);
