@@ -26,7 +26,7 @@ static int define_column(char *buff, const struct column_descriptor *col);
 /*
  * This function generates a CREATE TABLE statement from
  * the table struct and the coloumn descriptor list,
- * and fill the buff with it.
+ * fills the buffer with it.
  *
  * Assumes that the buffer is large enough.
  */
@@ -34,12 +34,12 @@ char *define_table(char *buff, const struct table *tbl,
 		   const struct column_descriptor *col_head)
 {
 	const struct column_descriptor *col;
-	int num_stored;
+	int char_stored;
 
 	num_stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->dat_name);
 	col = col_head->next;
 	while (col) {
-		num_stored += define_column(buff + num_stored, col);
+		char_stored += define_column(buff + char_stored, col);
 		col = col->next;
 	}
 
