@@ -64,15 +64,15 @@ void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl)
 /* This function strips the trailing `.ixf' of `tbl->dat_name' */
 static void strip_ext(char *name, const char *ext)
 {
-        char *ext_loc;
-        int ext_len;
-        int name_len;
+	char *ext_loc;
+	int ext_len;
+	int name_len;
 
-        if (!name || !ext || (ext_len = strlen(ext)) == 0 || (name_len = strlen(name)) <= ext_len)
-                return;
+	if (!name || !ext || (ext_len = strlen(ext)) == 0
+	    || (name_len = strlen(name)) <= ext_len)
+		return;
 
-        ext_loc = name + name_len - ext_len;
-        if (strcasecmp(ext_loc, ext) == 0)
-                *ext_loc = '\0';
+	ext_loc = name + name_len - ext_len;
+	if (strcasecmp(ext_loc, ext) == 0)
+		*ext_loc = '\0';
 }
-

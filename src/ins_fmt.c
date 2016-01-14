@@ -20,14 +20,14 @@
 #include "util.h"
 #include "ixfcvt.h"
 
-static int format_column(char *pos, const struct column_descriptor *col);
+static int format_column(char *pos, const struct column_desc *col);
 
 /* format a INSERT template to be used by printf family functions */
 char *format_insert(char *buff, const char *table_name,
-		    const struct column_descriptor *col_head)
+		    const struct column_desc *col_head)
 {
 	char *cur;
-	const struct column_descriptor *col;
+	const struct column_desc *col;
 
 	cur = buff;
 	cur += sprintf(cur, "INSERT INTO %s (", table_name);
@@ -58,7 +58,7 @@ char *format_insert(char *buff, const char *table_name,
  * puts a specifier for `col' into the particular position of
  * the buffer, returns the number of characters populated
  */
-static int format_column(char *pos, const struct column_descriptor *col)
+static int format_column(char *pos, const struct column_desc *col)
 {
 	int cnt;
 

@@ -32,11 +32,11 @@
 #define IXFCNULL_OFFSET 260
 #define COL_ATTR_BUFF_SIZE 7	/* max of IXFCxxxx_BYTES + 1 */
 
-static void tweak_col_length(struct column_descriptor *col_desc);
+static void tweak_col_length(struct column_desc *col_desc);
 
-/* parse a C record, store the info in a column_descriptor struct */
-void parse_column_descriptor_record(const unsigned char *c_rec_buff,
-				    struct column_descriptor *col_desc)
+/* parse a C record, store the info in a column_desc struct */
+void parse_column_desc_record(const unsigned char *c_rec_buff,
+			      struct column_desc *col_desc)
 {
 /* ignore IXFCDEFL, IXFCDEFV and IXFCKPOS now */
 	static unsigned char buff[COL_ATTR_BUFF_SIZE];
@@ -63,8 +63,8 @@ void parse_column_descriptor_record(const unsigned char *c_rec_buff,
 	col_desc->nullable = c_rec_buff[IXFCNULL_OFFSET] == 'Y';
 }
 
-/* tweak column_descriptor.length */
-static void tweak_col_length(struct column_descriptor *col_desc)
+/* tweak column_desc.length */
+static void tweak_col_length(struct column_desc *col_desc)
 {
 	switch (col_desc->type) {
 	case SMALLINT:

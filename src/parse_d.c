@@ -36,11 +36,11 @@ static char *decode_packed_decimal(const unsigned char *buff,
 				   size_t data_length);
 
 void parse_data_record(const unsigned char *d_rec_buff,
-		       const struct column_descriptor *col_desc_head)
+		       const struct column_desc *col_desc_head)
 {
 	static unsigned char buff[D_REC_BUFF_SIZE];
 	const unsigned char *walker;	/* walk through d_rec_buff */
-	struct column_descriptor *col_desc;
+	struct column_desc *col_desc;
 	size_t data_len;
 	char *ascii_dec;
 
@@ -110,6 +110,7 @@ static long parse_ixf_integer(const unsigned char *src, size_t bytes)
 	long value;
 	size_t i;
 
+	/* SMALLINT: 2 bytes; INTEGER: 4bytes */
 	assert(bytes == 2 || bytes == 4);
 	value = 0;
 	for (i = 0; i < bytes; ++i)

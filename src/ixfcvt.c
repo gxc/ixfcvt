@@ -29,7 +29,7 @@
 #endif
 #define REC_LEN_BYTES_SIZE 6
 
-static void free_col_desc(struct column_descriptor *head);
+static void free_col_desc(struct column_desc *head);
 static void free_tbl(struct table *tbl);
 
 /* return record length on success, return -1 on error, 0 on EOF */
@@ -59,13 +59,13 @@ int main(void)
 	ssize_t rec_len;
 	int rec_type;
 	struct table *tbl;
-	struct column_descriptor *col_head;
-	struct column_descriptor *col_node;
+	struct column_desc *col_head;
+	struct column_desc *col_node;
 
 	tbl = malloc(sizeof(struct table));
 	if (!tbl)
 		err_exit("not enough memory available");
-	col_head = malloc(sizeof(struct column_descriptor));
+	col_head = malloc(sizeof(struct column_desc));
 	if (!col_head)
 		err_exit("not enough memory available");
 
@@ -83,13 +83,12 @@ int main(void)
 			parse_table_record(buff, tbl);
 			break;
 		case 'C':
-			col_node->next =
-			    malloc(sizeof(struct column_descriptor));
+			col_node->next = malloc(sizeof(struct column_desc));
 			if (!col_node->next)
 				err_exit("not enough memory available");
 			col_node = col_node->next;
 			col_node->next = NULL;
-			parse_column_descriptor_record(buff, col_node);
+			parse_column_desc_record(buff, col_node);
 			break;
 		case 'D':
 			parse_data_record(buff, col_head);
@@ -128,9 +127,9 @@ static void free_tbl(struct table *tbl)
 }
 
 /* free C records */
-static void free_col_desc(struct column_descriptor *head)
+static void free_col_desc(struct column_desc *head)
 {
-	struct column_descriptor *node;
+	struct column_desc *node;
 	while (head->next) {
 		node = head->next;
 		head->next = node->next;
@@ -139,4 +138,3 @@ static void free_col_desc(struct column_descriptor *head)
 	}
 	free(head);
 }
-

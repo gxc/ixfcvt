@@ -21,7 +21,7 @@
 #include "util.h"
 #include "ixfcvt.h"
 
-static int define_column(char *buff, const struct column_descriptor *col);
+static int define_column(char *buff, const struct column_desc *col);
 
 /*
  * This function generates a CREATE TABLE statement from
@@ -31,12 +31,12 @@ static int define_column(char *buff, const struct column_descriptor *col);
  * Assumes that the buffer is large enough.
  */
 char *define_table(char *buff, const struct table *tbl,
-		   const struct column_descriptor *col_head)
+		   const struct column_desc *col_head)
 {
-	const struct column_descriptor *col;
+	const struct column_desc *col;
 	int char_stored;
 
-	num_stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->dat_name);
+	char_stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->dat_name);
 	col = col_head->next;
 	while (col) {
 		char_stored += define_column(buff + char_stored, col);
@@ -45,7 +45,7 @@ char *define_table(char *buff, const struct table *tbl,
 
 	/* TO-DO: implement primary key definition */
 
-	strcpy(buff + num_stored, "\n);\n");
+	strcpy(buff + char_stored, "\n);\n");
 
 	return buff;
 }
@@ -54,7 +54,7 @@ char *define_table(char *buff, const struct table *tbl,
  * This function interprets what a column descriptor struct defines,
  * returns the number of characters populated into the buffer.
  */
-static int define_column(char *buff, const struct column_descriptor *col)
+static int define_column(char *buff, const struct column_desc *col)
 {
 	int cnt;
 
