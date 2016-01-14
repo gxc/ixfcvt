@@ -107,8 +107,9 @@ int main(void)
 		printf("read all!\n");
 
 	/* print the create table clauses */
-	char buff_creat_tbl[2000];
-	puts(define_table(buff_creat_tbl, tbl, col_head));
+	char buff_def[5000];
+	puts(define_table(buff_def, tbl, col_head));
+	puts(format_insert(buff_def, tbl->dat_name, col_head));
 
 	free_tbl(tbl);
 	free_col_desc(col_head);
