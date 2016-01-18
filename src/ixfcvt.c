@@ -29,6 +29,7 @@
 #endif
 #define REC_LEN_BYTES_SIZE 6
 
+#include <errno.h>
 static void free_col_desc(struct column_desc *head);
 static void free_tbl(struct table *tbl);
 
@@ -50,9 +51,10 @@ ssize_t get_record(const int fd, unsigned char *data_buff, int *rec_type)
 	return rec_len;
 }
 
-int main(void)
+/* TO-DO: provide an interface */
+int main(int argc, char *argv[])
 {
-	const char *path = "../test/test.ixf";
+	char path[1000];
 	unsigned char buff[BUFF_SIZE];
 	int fd;
 	int open_flags = O_RDONLY;
@@ -62,15 +64,23 @@ int main(void)
 	struct column_desc *col_head;
 	struct column_desc *col_node;
 
+	/* for testing */
+	if (argc > 1 && access(argv[1], R_OK) == 0)
+		strcpy(path, argv[1]);
+	else
+		strcpy(path, "../test/test.ixf");
+
 	tbl = malloc(sizeof(struct table));
 	if (!tbl)
 		err_exit("not enough memory available");
+	/* TO-DO: change to a lighter head */
 	col_head = malloc(sizeof(struct column_desc));
 	if (!col_head)
 		err_exit("not enough memory available");
 
-	if ((fd = open(path, open_flags)) == -1)
+	if ((fd = open(path, open_flags)) == -1) {
 		err_exit("failed to open file: %s", path);
+	}
 
 	col_node = col_head;
 	memset(buff, 0x00, BUFF_SIZE);
@@ -92,7 +102,7 @@ int main(void)
 			break;
 		case 'D':
 			/* parse_data_record(buff, col_head); */
-			data_record_to_sql(buff, col_head);
+			data_record_to_sql(buff, tbl->dat_name, col_head);
 			break;
 		case 'A':
 			break;
@@ -103,13 +113,10 @@ int main(void)
 
 	if (rec_len == -1)
 		err_exit("read record content failed, data wrong");
-	else			/* rec_len == 0 */
-		printf("read all!\n");
 
 	/* print the create table clauses */
 	char buff_def[5000];
 	puts(define_table(buff_def, tbl, col_head));
-	puts(format_insert(buff_def, tbl->dat_name, col_head));
 
 	free_tbl(tbl);
 	free_col_desc(col_head);

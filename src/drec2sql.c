@@ -25,59 +25,111 @@
 #define IXFDCOLS_OFFSET 8
 #define D_REC_BUFF_SIZE 32780
 
+static char *fill_in_arguments(char *buff, const char *table_name,
+			       const struct column_desc *col_head);
+static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
+			    const struct column_desc *col_head);
+static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
+
+/* convert a D record to a INSERT statement */
 void data_record_to_sql(const unsigned char *d_rec_buff,
-		        const struct column_desc *col_head)
+			const char *table_name,
+			const struct column_desc *col_head)
 {
 	static char buff[D_REC_BUFF_SIZE];
+	char *pos;
+
+	pos = fill_in_arguments(buff, table_name, col_head);
+	pos = fill_in_values(pos, d_rec_buff, col_head);
+	fputs(buff, stdout);
+}
+
+/*
+ * This function writes arguments of the INSERT statement into the buffer,
+ * returns a pointer to the byte following the last written byte.
+ * To be precise, it writes
+ * "INSERT INTO table_name (column1, column2, ...) VALUES "
+ * into the buffer.
+ */
+static char *fill_in_arguments(char *buff, const char *table_name,
+			       const struct column_desc *col_head)
+{
+	const struct column_desc *col;
+
+	buff += sprintf(buff, "INSERT INTO %s (", table_name);
+
+	col = col_head->next;
+	while (col) {
+		strcpy(buff, col->name);
+		buff += strlen(col->name);
+		if (col->next)
+			*buff++ = ',';
+		col = col->next;
+	}
+	strcpy(buff, ") VALUES ");
+	buff += 9;
+
+	return buff;
+}
+
+/*
+ * converts a D record to a string of INSERT row values,
+ * i.e. "(val1,val2,...);\n" and saves it into `buff'
+ */
+static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
+			    const struct column_desc *col_head)
+{
 	const unsigned char *walker;
 	struct column_desc *col;
-	size_t data_len;
+	int data_len;
+	long int_val;
 	char *ascii_dec;
 
 	col = col_head->next;
-	memset(buff, 0x00, D_REC_BUFF_SIZE);
-
 	while (col) {
+		if (col == col_head->next)
+			*buff++ = '(';
+		else
+			*buff++ = ',';
+
 		walker = d_rec_buff + IXFDCOLS_OFFSET + col->offset;
 		if (col->nullable) {
 			if (column_is_null(walker)) {
-				printf("null");
+				strcpy(buff, "null");
+				buff += 4;
 				continue;
-			} else {	/* bypass the null indicator */
+			} else {
+				/* bypass the null indicator */
 				walker += 2;
 			}
 		}
 
 		switch (col->type) {
 		case CHAR:
-			memcpy(buff, walker, col->length);
-			printf("CHAR(%zd): %.*s ", col->length,
-			       (int)col->length, buff);
+			/* TO-DO:compose trailing space */
+			buff = write_as_sql_str(buff, walker, col->length);
 			break;
 		case VARCHAR:
-			data_len = (size_t) parse_ixf_integer(walker, 2);
-			memcpy(buff, walker + 2, data_len);
-			printf("VARCHAR(%zd of %zd): %.*s ", data_len,
-			       col->length, (int)data_len, buff);
+			data_len = parse_ixf_integer(walker, 2);
+			walker += 2;
+			buff = write_as_sql_str(buff, walker, data_len);
 			break;
 		case SMALLINT:
-			printf("SMALLINT: %hd ",
-			       (short)parse_ixf_integer(walker,
-							col->length));
+			int_val = parse_ixf_integer(walker, col->length);
+			buff += sprintf(buff, "%hd", (short)int_val);
 			break;
 		case INTEGER:
-			printf("INTEGER: %ld ",
-			       parse_ixf_integer(walker, col->length));
+			int_val = parse_ixf_integer(walker, col->length);
+			buff += sprintf(buff, "%ld", int_val);
 			break;
 		case DECIMAL:
-			ascii_dec =
-			    decode_packed_decimal(walker, col->length);
-			printf("DECIMAL: %s ", ascii_dec);
+			/*TO-DO:use alloca ? */
+			ascii_dec = decode_packed_decimal(walker, col->length);
+			buff += sprintf(buff, ascii_dec);
 			free(ascii_dec);
 			break;
 		case TIMESTAMP:
-			memcpy(buff, walker, col->length);
-			printf("TIMESTAMP: %.*s ", (int)col->length, buff);
+			buff = write_as_sql_str(buff, walker, col->length);
 			break;
 		default:
 			err_exit("DB2 data type %d not implenmented",
@@ -85,6 +137,42 @@ void data_record_to_sql(const unsigned char *d_rec_buff,
 		}
 		col = col->next;
 	}
+	strcpy(buff, ");\n");
+	buff += 3;
 
-	puts("\n========= DATA RECORD END =========");
+	return buff;
 }
+
+/*
+ * This function escapes single quotes and backslashes in `src',
+ * wraps it in single quotes, writes the result into the buffer,
+ * and returns a pointer to the byte following the last written
+ * byte in the buffer.
+ * `len' is the number of characters to be processed in `src'.
+ */
+
+/*****BUGS here**********/
+/* if src="" len = 0 */
+static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len)
+{
+	size_t i;
+char a[10000];
+if (len > 1000) {
+printf("len = %zd\n", len);
+memset(a, 0, 10000);
+memcpy(a, src, 10000);
+puts(a);
+}
+	
+	*buff++ = '\'';
+	for (i = 0; i < len; ++i) {
+		*buff++ = *src;
+		if (*src == '\'' || *src == '\\')
+			*buff++ = *src;
+		src++;
+	}
+	*buff++ = '\'';
+
+	return buff;
+}
+
