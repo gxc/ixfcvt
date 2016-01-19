@@ -29,9 +29,9 @@ static char *fill_in_arguments(char *buff, const char *table_name,
 			       const struct column_desc *col_head);
 static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 			    struct column_desc **pcol);
-static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
-static char *fill_in_col_val(char *buff, const unsigned char *src,
+static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col);
+static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
 /* convert D records of a row to a INSERT statement */
 void data_record_to_sql(const unsigned char *d_rec_buff,
@@ -53,15 +53,13 @@ void data_record_to_sql(const unsigned char *d_rec_buff,
 		pos = buff;
 		fputs(buff, stdout);
 	}
-
 }
 
 /*
- * This function writes arguments of the INSERT statement into the buffer,
- * returns a pointer to the byte following the last written byte.
- * To be precise, it writes
- * "INSERT INTO table_name (column1, column2, ...) VALUES "
- * into the buffer.
+ * This function writes arguments of the INSERT statement into
+ * the buffer, returns a pointer to the byte following the last
+ * written byte. To be precise, it writes
+ * "INSERT INTO table_name (column1, column2, ...) VALUES ".
  */
 static char *fill_in_arguments(char *buff, const char *table_name,
 			       const struct column_desc *col_head)
@@ -85,8 +83,11 @@ static char *fill_in_arguments(char *buff, const char *table_name,
 }
 
 /*
- * converts a D record to a string of INSERT row values,
- * i.e. "(val1,val2,...);\n" and saves it into `buff'
+ * Converts a D record to a string of row values, i.e.
+ * "(val1,val2,...);\n" or a part of them, and saves it into `buff'.
+ * If a row consists of mutiple D records, `*pcol' returns the
+ * column corresponding to the beginning of the next D record,
+ * or NULL to indicate the end of a row.
  */
 static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 			    struct column_desc **pcol)
@@ -105,26 +106,27 @@ static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 		}
 
 		walker = d_rec_buff + IXFDCOLS_OFFSET + col->offset;
-		buff = fill_in_col_val(buff, walker, col);
+		buff = fill_in_a_value(buff, walker, col);
 		col = col->next;
 	} while (col && col->offset);
 
 	/* If col points to NULL, all values in a
 	   row processed. Or if col->offset is 0,
 	   values are stored in the next D record */
+	*pcol = col;
 	if (!col) {
 		strcpy(buff, ");\n");
 		buff += 3;
 	}
 
-	/* *pcol points to the following column */
-	*pcol = col;
-
 	return buff;
 }
 
-/* writes a value of the specified column from `src' to `buff' */
-static char *fill_in_col_val(char *buff, const unsigned char *src,
+/*
+ * writes the string value of the specified column in
+ * a row from `src' to `buff'
+ */
+static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col)
 {
 	unsigned val_len;
@@ -144,7 +146,6 @@ static char *fill_in_col_val(char *buff, const unsigned char *src,
 
 	switch (col->type) {
 	case CHAR:
-		/* TO-DO:compose trailing space */
 		buff = write_as_sql_str(buff, src, col->length);
 		break;
 	case VARCHAR:
@@ -194,8 +195,9 @@ static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len)
 			*buff++ = *src;
 		src++;
 	}
+	/* trim is not needed */
 	/* while (*(buff - 1) == ' ') */
-	/* 	--buff; */
+	/*      --buff; */
 	*buff++ = '\'';
 
 	return buff;
