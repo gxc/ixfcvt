@@ -20,7 +20,7 @@ CFLAGS = -O0 -g -std=c99 -Wall -Wextra -Wshadow -Wpedantic -Werror
 CPPFLAGS = -I.
 LDFLAGS = -L.
 LDLIBS =
-OBJS = ixfcvt.o def_tbl.o parse_d.o drec2sql.o parse_t.o parse_c.o util.o
+OBJS = ixfcvt.o def_tbl.o parse_d.o d_rec2sql.o parse_t.o parse_c.o util.o
 PROG = ixfcvt
 
 .PHONY : all
