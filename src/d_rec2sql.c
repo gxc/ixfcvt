@@ -194,6 +194,8 @@ static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len)
 			*buff++ = *src;
 		src++;
 	}
+	while (*(buff - 1) == ' ')
+		--buff;
 	*buff++ = '\'';
 
 	return buff;
