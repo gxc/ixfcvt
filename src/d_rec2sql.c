@@ -28,7 +28,7 @@
 static char *fill_in_arguments(char *buff, const char *table_name,
 			       const struct column_desc *col_head);
 static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
-			    const struct column_desc *col_head);
+			    struct column_desc **pcol);
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
 /* convert a D record to a INSERT statement */
@@ -37,11 +37,20 @@ void data_record_to_sql(const unsigned char *d_rec_buff,
 			const struct column_desc *col_head)
 {
 	static char buff[D_REC_BUFF_SIZE];
-	char *pos;
+	static char *pos = buff;
+	static struct column_desc *next_col = NULL;
 
-	pos = fill_in_arguments(buff, table_name, col_head);
-	pos = fill_in_values(pos, d_rec_buff, col_head);
-	fputs(buff, stdout);
+	if (!next_col)
+		next_col = (struct column_desc *)col_head;
+	if (next_col == col_head)
+		pos = fill_in_arguments(buff, table_name, col_head);
+	pos = fill_in_values(pos, d_rec_buff, &next_col);
+	if (!next_col) {
+		next_col = (struct column_desc *)col_head;
+		pos = buff;
+		fputs(buff, stdout);
+	}
+
 }
 
 /*
@@ -77,7 +86,7 @@ static char *fill_in_arguments(char *buff, const char *table_name,
  * i.e. "(val1,val2,...);\n" and saves it into `buff'
  */
 static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
-			    const struct column_desc *col_head)
+			    struct column_desc **pcol)
 {
 	const unsigned char *walker;
 	struct column_desc *col;
@@ -85,19 +94,22 @@ static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 	long int_val;
 	char *ascii_dec;
 
-	col = col_head->next;
-	while (col) {
-		if (col == col_head->next)
+	col = *pcol;
+	do {
+		if (col->name == NULL) { /* special id of head */
+			col = col->next;
 			*buff++ = '(';
-		else
+		} else {
 			*buff++ = ',';
+		}
 
 		walker = d_rec_buff + IXFDCOLS_OFFSET + col->offset;
 		if (col->nullable) {
 			if (column_is_null(walker)) {
 				strcpy(buff, "null");
 				buff += 4;
-				continue;
+				/* continue; */
+				goto next;
 			} else {
 				/* bypass the null indicator */
 				walker += 2;
@@ -135,11 +147,16 @@ static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 			err_exit("DB2 data type %d not implenmented",
 				 col->type);
 		}
+next:
 		col = col->next;
-	}
-	strcpy(buff, ");\n");
-	buff += 3;
+	} while (col && col->offset);
 
+	if (!col) {
+		strcpy(buff, ");\n");
+		buff += 3;
+	}
+
+	*pcol = col;
 	return buff;
 }
 

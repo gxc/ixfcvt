@@ -77,6 +77,8 @@ int main(int argc, char *argv[])
 	col_head = malloc(sizeof(struct column_desc));
 	if (!col_head)
 		err_exit("not enough memory available");
+	else
+		col_head->name = NULL; /* special id for head */
 
 	if ((fd = open(path, open_flags)) == -1) {
 		err_exit("failed to open file: %s", path);
