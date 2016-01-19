@@ -22,6 +22,8 @@
 #include "ixfcvt.h"
 
 static int define_column(char *buff, const struct column_desc *col);
+static int define_primary_key(char *buff, const struct column_desc *col_head);
+static int max_pk_idx(const struct column_desc *col_head);
 
 /*
  * This function generates a CREATE TABLE statement from
@@ -43,11 +45,54 @@ char *define_table(char *buff, const struct table *tbl,
 		col = col->next;
 	}
 
-	/* TO-DO: implement primary key definition */
-
+	char_stored += define_primary_key(buff + char_stored, col_head);
 	strcpy(buff + char_stored, "\n);\n");
 
 	return buff;
+}
+
+/* Writes the primary key list if any, returns the bytes written. */
+static int define_primary_key(char *buff, const struct column_desc *col_head)
+{
+	const struct column_desc *col;
+	int pk_max;
+	int cnt;
+	int i;
+
+	pk_max = max_pk_idx(col_head);
+	if (pk_max == 0)
+		return 0;
+
+	strcpy(buff, ",\n\tPRIMARY KEY (");
+	cnt = strlen(",\n\tPRIMARY KEY (");
+
+	for (i = 1; i <= pk_max; ++i) {
+		col = col_head->next;
+		while (col->pk_index != i)
+			col = col->next;
+		if (i < pk_max)
+			cnt += sprintf(buff + cnt, "%s, ", col->name);
+		else
+			cnt += sprintf(buff + cnt, "%s)", col->name);
+	}
+
+	return cnt;
+}
+
+/* Returns the biggest pk_index among the colunms, or 0 if no pk found */
+static int max_pk_idx(const struct column_desc *col_head)
+{
+	const struct column_desc *col;
+	int max;
+
+	max = 0;
+	col = col_head->next;
+	while (col) {
+		max = col->pk_index > max ? col->pk_index : max;
+		col = col->next;
+	}
+
+	return max;
 }
 
 /*
@@ -86,11 +131,11 @@ static int define_column(char *buff, const struct column_desc *col)
 
 	if (!col->nullable) {
 		strcpy(buff + cnt, " NOT NULL");
-		cnt += 9;
+		cnt += strlen(" NOT NULL");
 	}
 	if (col->next) {
 		strcpy(buff + cnt, ",\n");
-		cnt += 2;
+		cnt += strlen(",\n");
 	}
 
 	return cnt;

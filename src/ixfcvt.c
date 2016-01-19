@@ -73,12 +73,13 @@ int main(int argc, char *argv[])
 	tbl = malloc(sizeof(struct table));
 	if (!tbl)
 		err_exit("not enough memory available");
-	/* TO-DO: change to a lighter head */
+	/* TO-DO: change to a lighter head? */
 	col_head = malloc(sizeof(struct column_desc));
 	if (!col_head)
 		err_exit("not enough memory available");
 	else
-		col_head->name = NULL; /* special id for head */
+		/* only name of head is NULL */
+		col_head->name = NULL;
 
 	if ((fd = open(path, open_flags)) == -1) {
 		err_exit("failed to open file: %s", path);
@@ -86,7 +87,7 @@ int main(int argc, char *argv[])
 
 	col_node = col_head;
 	memset(buff, 0x00, BUFF_SIZE);
-	/* TO-DO: store H and A when pump use */
+	/* TO-DO: refactory to a function, store H and A when pump use */
 	while ((rec_len = get_record(fd, buff, &rec_type)) > 0) {
 		switch (rec_type) {
 		case 'H':
@@ -103,7 +104,6 @@ int main(int argc, char *argv[])
 			parse_column_desc_record(buff, col_node);
 			break;
 		case 'D':
-			/* parse_data_record(buff, col_head); */
 			data_record_to_sql(buff, tbl->dat_name, col_head);
 			break;
 		case 'A':
@@ -116,12 +116,13 @@ int main(int argc, char *argv[])
 	if (rec_len == -1)
 		err_exit("read record content failed, data wrong");
 
+	/* TO-DO: modify this, no buff_def */
 	/* print the create table clauses */
 	char buff_def[5000];
 	puts(define_table(buff_def, tbl, col_head));
 
-	free_tbl(tbl);
 	free_col_desc(col_head);
+	free_tbl(tbl);
 	if (close(fd) == -1)
 		err_exit("failed to close file: %s", path);
 

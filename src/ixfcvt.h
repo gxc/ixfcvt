@@ -33,14 +33,20 @@ struct column_desc {
 				   the precision and last 2 digits for scale */
 	long offset;		/* offset from the beginning of a D record */
 	_Bool nullable;
+	int pk_index;		/* order in pk list, 0 if not a part of it */
 	struct column_desc *next;
 };
 
-/* TO-DO: pk list */
 struct table {
 	char *dat_name;		/* original IXF file name, without ext `.ixf' */
 	int col_num;		/* number of C records */
 	char *pk_name;		/* name of the primary key */
+	struct primary_key *pk; /* pk list */
+};
+
+struct primary_key {
+	const struct column_desc *pk_col;	/* column as (a part of) pk */
+	struct primary_key *pk_next;
 };
 
 void parse_table_record(const unsigned char *record, struct table *tbl);
