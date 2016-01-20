@@ -41,7 +41,6 @@ struct table {
 	char *dat_name;		/* original IXF file name, without ext `.ixf' */
 	int col_num;		/* number of C records */
 	char *pk_name;		/* name of the primary key */
-	struct primary_key *pk;	/* pk list */
 };
 
 void parse_table_record(const unsigned char *record, struct table *tbl);
@@ -52,5 +51,5 @@ void parse_data_record(const unsigned char *record,
 char *define_table(char *buff, const struct table *tbl,
 		   const struct column_desc *col_head);
 void data_record_to_sql(const unsigned char *d_rec_buff,
-			const char *table_name,
+			const struct table *tbl,
 			const struct column_desc *col_head);
