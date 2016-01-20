@@ -19,11 +19,13 @@
 #include <assert.h>
 
 #include "util.h"
+#include "parse_d.h"
 
 #define LOW_NIBBLE 0x0F
 #define HIGH_NIBBLE 0xF0
 #define NEGATIVE_SIGN 0x0D
 #define DIGIT_HIGH_NIBBLE 0x30
+#define NULL_VAL_INDICATOR 0xFFFF
 
 static char *squeeze_zeros(char *decimal);
 
@@ -51,7 +53,16 @@ long parse_ixf_integer(const unsigned char *src, size_t bytes)
  */
 _Bool column_is_null(const unsigned char *null_ind)
 {
-	return (unsigned short)parse_ixf_integer(null_ind, 2) == 0xFFFF;
+	long ind;
+
+	ind = parse_ixf_integer(null_ind, NULL_VAL_IND_BYTES);
+	return ind == NULL_VAL_INDICATOR;
+}
+
+/* Returns the real length of a VARCHAR column value. */
+size_t get_varchar_cur_len(const unsigned char *len_ind)
+{
+	return parse_ixf_integer(len_ind, VARCHAR_CUR_LEN_IND_BYTES);
 }
 
 /*

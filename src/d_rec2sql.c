@@ -22,7 +22,6 @@
 #include "ixfcvt.h"
 #include "parse_d.h"
 
-#define IXFDCOLS_OFFSET 8
 #define D_REC_BUFF_SIZE 32780
 
 static char *fill_in_arguments(char *buff, const char *table_name,
@@ -77,7 +76,7 @@ static char *fill_in_arguments(char *buff, const char *table_name,
 		col = col->next;
 	}
 	strcpy(buff, ") VALUES ");
-	buff += 9;
+	buff += strlen(") VALUES ");
 
 	return buff;
 }
@@ -116,7 +115,7 @@ static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 	*pcol = col;
 	if (!col) {
 		strcpy(buff, ");\n");
-		buff += 3;
+		buff += strlen(");\n");
 	}
 
 	return buff;
@@ -129,18 +128,18 @@ static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col)
 {
-	unsigned val_len;
+	unsigned cur_len;
 	long num_val;
 	char *ascii_dec;
 
 	if (col->nullable) {
 		if (column_is_null(src)) {
 			strcpy(buff, "null");
-			buff += 4;
+			buff += strlen("null");
 			return buff;
 		} else {
 			/* bypass the null indicator */
-			src += 2;
+			src += NULL_VAL_IND_BYTES;
 		}
 	}
 
@@ -149,9 +148,9 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 		buff = write_as_sql_str(buff, src, col->length);
 		break;
 	case VARCHAR:
-		val_len = parse_ixf_integer(src, 2);
-		src += 2;
-		buff = write_as_sql_str(buff, src, val_len);
+		cur_len = get_varchar_cur_len(src);
+		src += VARCHAR_CUR_LEN_IND_BYTES;
+		buff = write_as_sql_str(buff, src, cur_len);
 		break;
 	case SMALLINT:
 		num_val = parse_ixf_integer(src, col->length);
