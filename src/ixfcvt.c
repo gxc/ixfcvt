@@ -24,95 +24,76 @@
 #include "util.h"
 #include "ixfcvt.h"
 
-#ifndef BUFF_SIZE
-#define BUFF_SIZE 10240
-#endif
 #define REC_LEN_BYTES 6
+#define DEF_BUFF_SIZE 4096
 
-#include <errno.h>
-static ssize_t get_record(const int fd, unsigned char *data_buff);
+static ssize_t get_record_len(const int fd);
+static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size);
+static struct column_desc *append_col_node(struct column_desc *rear);
 static void free_col_desc(struct column_desc *head);
 static void free_tbl(struct table *tbl);
-
-/*
- * Fills the buffer with a record, returns the length of the
- * record on success, return -1 on error, 0 on EOF.
- * Assumes that the buffer is large enough.
- */
-static ssize_t get_record(const int fd, unsigned char *data_buff)
-{
-	static char recl_buff[REC_LEN_BYTES + 1];
-	ssize_t rec_len;
-
-	if (read(fd, recl_buff, REC_LEN_BYTES) != REC_LEN_BYTES)
-		return 0;
-	rec_len = str_to_long(recl_buff);
-	if (read(fd, data_buff, rec_len) != rec_len)
-		return -1;
-
-	return rec_len;
-}
 
 /* TO-DO: provide an interface */
 int main(int argc, char *argv[])
 {
 	char path[1000];
-	unsigned char buff[BUFF_SIZE];
+	unsigned char *buff;
+	ssize_t buff_size;
 	int fd;
 	int open_flags = O_RDONLY;
 	ssize_t rec_len;
-	int rec_type;
 	struct table *tbl;
 	struct column_desc *col_head;
 	struct column_desc *col_node;
 
-	/* for testing */
 	if (argc > 1 && access(argv[1], R_OK) == 0)
 		strcpy(path, argv[1]);
 	else
 		strcpy(path, "../test/test.ixf");
 
+	buff = malloc(DEF_BUFF_SIZE);
+	if (!buff)
+		err_exit("not enough memory available");
+	buff_size = DEF_BUFF_SIZE;
+
 	tbl = malloc(sizeof(struct table));
 	if (!tbl)
 		err_exit("not enough memory available");
-	/* TO-DO: change to a lighter head? */
+
 	col_head = malloc(sizeof(struct column_desc));
 	if (!col_head)
 		err_exit("not enough memory available");
-	else
-		/* only name of head is NULL */
-		col_head->name = NULL;
-
-	if ((fd = open(path, open_flags)) == -1) {
-		err_exit("failed to open file: %s", path);
-	}
-
+	/* only name of head can be NULL */
+	col_head->name = NULL;
 	col_node = col_head;
-	memset(buff, 0x00, BUFF_SIZE);
-	/* TO-DO: refactory to a function, store H and A when pump use */
-	while ((rec_len = get_record(fd, buff)) > 0) {
-		rec_type = *buff;
-		switch (rec_type) {
+
+	if ((fd = open(path, open_flags)) == -1)
+		err_exit("failed to open file: %s", path);
+
+	while ((rec_len = get_record_len(fd)) > 0) {
+		if (rec_len > buff_size)
+			buff = resize_buff(buff, rec_len);
+
+		if (!get_record(fd, buff, rec_len))
+			err_exit("input file corrupted");
+
+		switch (*buff) {
 		case 'H':
 			break;
 		case 'T':
 			parse_table_record(buff, tbl);
 			break;
 		case 'C':
-			col_node->next = malloc(sizeof(struct column_desc));
-			if (!col_node->next)
-				err_exit("not enough memory available");
-			col_node = col_node->next;
-			col_node->next = NULL;
+			col_node = append_col_node(col_node);
 			parse_column_desc_record(buff, col_node);
 			break;
 		case 'D':
-			data_record_to_sql(buff, tbl->dat_name, col_head);
+			data_record_to_sql(buff, tbl, col_head);
 			break;
 		case 'A':
 			break;
 		default:
-			err_exit("wrong format detected");
+			err_exit("not a valid IXF file");
 		}
 	}
 
@@ -130,6 +111,41 @@ int main(int argc, char *argv[])
 		err_exit("failed to close file: %s", path);
 
 	return 0;
+}
+
+/* Fills the buffer with a record, returns true on success, false on error. */
+static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size)
+{
+	if (read(fd, buff, rec_size) == rec_size)
+		return 1;
+	return 0;
+}
+
+/* Returns the size of next record on success, -1 on error, 0 on EOF. */
+static ssize_t get_record_len(const int fd)
+{
+	static char buff[REC_LEN_BYTES + 1];
+	ssize_t num_read;
+
+	num_read = read(fd, buff, REC_LEN_BYTES);
+	if (num_read == REC_LEN_BYTES)
+		return str_to_long(buff);
+	else
+		return num_read;
+}
+
+/* Allocates a new column_desc struct and appends it to `rear' */
+static struct column_desc *append_col_node(struct column_desc *rear)
+{
+	struct column_desc *node;
+
+	node = malloc(sizeof(struct column_desc));
+	if (!node)
+		err_exit("%s: not enough memory available", __func__);
+	rear->next = node;
+	node->next = NULL;
+
+	return node;
 }
 
 /* free the T record */
