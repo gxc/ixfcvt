@@ -16,7 +16,9 @@
 
 SHELL = /bin/bash
 CC = gcc
-CFLAGS = -O0 -g -std=c99 -Wall -Wextra -Wshadow -Wpedantic -Werror
+CFLAGS = -std=c99 -D_XOPEN_SOURCE=600 -Wall -Wextra -Wshadow -Wpedantic -Werror
+CFLAGS_DEBUG = -O0 -g -DDEBUG
+CFLAGS_RELEASE = -O2 -DNDEBUG
 CPPFLAGS = -I.
 LDFLAGS = -L.
 LDLIBS =
@@ -24,6 +26,15 @@ OBJS = ixfcvt.o def_tbl.o parse_d.o d_rec2sql.o parse_t.o parse_c.o util.o
 PROG = ixfcvt
 
 .PHONY : all
+
+.PHONY : debug
+debug : CFLAGS += $(CFLAGS_DEBUG)
+debug : all
+
+.PHONY : release
+release : CFLAGS += $(CFLAGS_RELEASE)
+release : all
+
 all : $(OBJS)
 	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS) $(LDLIBS)
 
