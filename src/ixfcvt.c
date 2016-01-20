@@ -27,27 +27,29 @@
 #ifndef BUFF_SIZE
 #define BUFF_SIZE 10240
 #endif
-#define REC_LEN_BYTES_SIZE 6
+#define REC_LEN_BYTES 6
 
 #include <errno.h>
+static ssize_t get_record(const int fd, unsigned char *data_buff);
 static void free_col_desc(struct column_desc *head);
 static void free_tbl(struct table *tbl);
 
-/* return record length on success, return -1 on error, 0 on EOF */
-/* output: data_buff and rec_type */
-/* assume the size of data_buff is large enough */
-ssize_t get_record(const int fd, unsigned char *data_buff, int *rec_type)
+/*
+ * Fills the buffer with a record, returns the length of the
+ * record on success, return -1 on error, 0 on EOF.
+ * Assumes that the buffer is large enough.
+ */
+static ssize_t get_record(const int fd, unsigned char *data_buff)
 {
+	static char recl_buff[REC_LEN_BYTES + 1];
 	ssize_t rec_len;
 
-	if (read(fd, data_buff, REC_LEN_BYTES_SIZE) != REC_LEN_BYTES_SIZE)
+	if (read(fd, recl_buff, REC_LEN_BYTES) != REC_LEN_BYTES)
 		return 0;
-	data_buff[REC_LEN_BYTES_SIZE] = '\0';
-	rec_len = str_to_long((char *)data_buff);
+	rec_len = str_to_long(recl_buff);
 	if (read(fd, data_buff, rec_len) != rec_len)
 		return -1;
 
-	*rec_type = *data_buff;
 	return rec_len;
 }
 
@@ -88,7 +90,8 @@ int main(int argc, char *argv[])
 	col_node = col_head;
 	memset(buff, 0x00, BUFF_SIZE);
 	/* TO-DO: refactory to a function, store H and A when pump use */
-	while ((rec_len = get_record(fd, buff, &rec_type)) > 0) {
+	while ((rec_len = get_record(fd, buff)) > 0) {
+		rec_type = *buff;
 		switch (rec_type) {
 		case 'H':
 			break;
