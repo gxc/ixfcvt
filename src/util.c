@@ -71,3 +71,15 @@ static _Bool is_blanks(const char *str)
 			return 0;
 	return 1;
 }
+
+/* Returns a pointer to the newly allocated buffer */
+void *resize_buff(void *buff, size_t new_size)
+{
+	void *tmp;
+
+	tmp = realloc(buff, new_size);
+	if (!tmp)
+		err_exit("%s(): not enough memory available", __func__);
+
+	return tmp;
+}

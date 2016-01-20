@@ -16,3 +16,4 @@
 
 void err_exit(const char *format, ...);
 long str_to_long(const char *str);
+void *resize_buff(void *buff, size_t new_size);
