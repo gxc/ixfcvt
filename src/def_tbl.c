@@ -103,6 +103,7 @@ static int define_column(char *buff, const struct column_desc *col)
 {
 	int cnt;
 
+	cnt = 0;
 	switch (col->type) {
 	case CHAR:
 		cnt = sprintf(buff, "\t%s CHAR(%zd)", col->name, col->length);
