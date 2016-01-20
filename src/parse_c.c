@@ -35,6 +35,7 @@
 #define COL_ATTR_BUFF_SIZE 7	/* max of IXFCxxxx_BYTES + 1 */
 
 static void tweak_col_length(struct column_desc *col_desc);
+static int get_pk_index(const char *buff);
 
 /* parse a C record, store the info in a column_desc struct */
 void parse_column_desc_record(const unsigned char *c_rec_buff,
@@ -55,7 +56,7 @@ void parse_column_desc_record(const unsigned char *c_rec_buff,
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
 	memcpy(buff, c_rec_buff + IXFCKPOS_OFFSET, IXFCKPOS_BYTES);
-	col_desc->pk_index = *buff == 'N' ? 0 : str_to_long(buff);
+	col_desc->pk_index = get_pk_index(buff);
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
 	memcpy(buff, c_rec_buff + IXFCTYPE_OFFSET, IXFCTYPE_BYTES);
@@ -69,6 +70,17 @@ void parse_column_desc_record(const unsigned char *c_rec_buff,
 	/* the IXFDCOLS field of the D record starts at 1 (not 0) */
 	col_desc->offset = str_to_long(buff) - 1;
 	col_desc->nullable = c_rec_buff[IXFCNULL_OFFSET] == 'Y';
+}
+
+/*
+ * Returns the position of the column as part of the primary key,
+ * or 0 if the column is not part of the key.
+ */
+static int get_pk_index(const char *buff)
+{
+	if (*buff == 'N')
+		return 0;
+	return str_to_long(buff);
 }
 
 /* tweak column_desc.length */
