@@ -34,14 +34,14 @@ static void strip_ext(char *name, const char *ext);
 /* parse a T record, store the info in a table struct */
 void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl)
 {
-	static unsigned char buff[TBL_ATTR_BUFF_SIZE];
+	static char buff[TBL_ATTR_BUFF_SIZE];
 	const unsigned char *walker;
 	int dat_name_len;
 	int pk_name_len;
 
 	memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
 	memcpy(buff, t_rec_buff + IXFTNAML_OFFSET, IXFTNAML_BYTES);
-	dat_name_len = str_to_long((char *)buff);
+	dat_name_len = str_to_long(buff);
 	tbl->dat_name = malloc(dat_name_len + 1);
 	if (!tbl->dat_name)
 		err_exit("not enough memory available");
@@ -50,7 +50,7 @@ void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl)
 	strip_ext(tbl->dat_name, ".ixf");
 
 	memcpy(buff, t_rec_buff + IXFTCCNT_OFFSET, IXFTCCNT_BYTES);
-	tbl->col_num = str_to_long((char *)buff);
+	tbl->col_num = str_to_long(buff);
 
 	pk_name_len = 1;	/* 1 for '\0' */
 	for (walker = t_rec_buff + IXFTPKNM_OFFSET; *walker; walker++)
