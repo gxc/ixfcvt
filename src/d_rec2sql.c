@@ -34,7 +34,7 @@ static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
 /* convert D records of a row to a INSERT statement */
 void data_record_to_sql(const unsigned char *d_rec_buff,
-			const char *table_name,
+			const struct table *tbl,
 			const struct column_desc *col_head)
 {
 	static char buff[D_REC_BUFF_SIZE];
@@ -45,7 +45,7 @@ void data_record_to_sql(const unsigned char *d_rec_buff,
 	if (!next_col)
 		next_col = (struct column_desc *)col_head;
 	if (next_col == col_head)
-		pos = fill_in_arguments(buff, table_name, col_head);
+		pos = fill_in_arguments(buff, tbl->dat_name, col_head);
 	pos = fill_in_values(pos, d_rec_buff, &next_col);
 	if (!next_col) {
 		next_col = (struct column_desc *)col_head;
