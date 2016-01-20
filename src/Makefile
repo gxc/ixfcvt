@@ -33,7 +33,7 @@ debug : all
 
 .PHONY : release
 release : CFLAGS += $(CFLAGS_RELEASE)
-release : all
+release : clean all
 
 all : $(OBJS)
 	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS) $(LDLIBS)
