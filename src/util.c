@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 #include <stdarg.h>
 #include <errno.h>
 
@@ -109,4 +112,35 @@ void *resize_buff(void *buff, size_t new_size)
 		err_exit("not enough memory available");
 
 	return tmp;
+}
+
+/* open file, return file descripter; exit on error */
+int open_file(const char *file, int oflags, mode_t mode)
+{
+	int fd;
+
+	if ((fd = open(file, oflags, mode)) == -1)
+		err_exit("%s: %s", file, strerror(errno));
+
+	return fd;
+}
+
+/* close file; exit on error */
+void close_file(int fd)
+{
+	if (close(fd) == -1)
+		err_exit(strerror(errno));
+}
+
+/* write a null terminated buffer to a file */
+void write_file(int fd, const char *buff)
+{
+	int to_write;
+	int written;
+
+	to_write = strlen(buff);
+	if ((written = write(fd, buff, to_write)) == -1)
+		err_exit("output file: %s", strerror(errno));
+	else if (written != to_write)
+		err_exit("output file: resource limit reached");
 }

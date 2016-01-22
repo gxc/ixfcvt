@@ -19,3 +19,6 @@ void err_exit(const char *format, ...);
 void usage(int status, const char *format, ...);
 long str_to_long(const char *str);
 void *resize_buff(void *buff, size_t new_size);
+int open_file(const char *file, int oflags, mode_t mode);
+void close_file(int fd);
+void write_file(int fd, const char *buff);
