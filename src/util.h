@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+void err_msg(const char *format, ...);
 void err_exit(const char *format, ...);
+void usage(int status, const char *format, ...);
 long str_to_long(const char *str);
 void *resize_buff(void *buff, size_t new_size);

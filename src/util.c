@@ -19,7 +19,18 @@
 #include <stdarg.h>
 #include <errno.h>
 
+static void print_errmsg(const char *format, va_list ap);
 static _Bool is_blanks(const char *str);
+
+/* write error message to stderr */
+void err_msg(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	print_errmsg(format, ap);
+	va_end(ap);
+}
 
 /* write error message to stderr and exit */
 void err_exit(const char *format, ...)
@@ -27,11 +38,27 @@ void err_exit(const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	print_errmsg(format, ap);
 	va_end(ap);
-	putc('\n', stderr);
-
 	exit(EXIT_FAILURE);
+}
+
+/* print USAGE message and exit with specified status */
+void usage(int status, const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	print_errmsg(format, ap);
+	va_end(ap);
+	exit(status);
+}
+
+/* print the error message and a newline character */
+static void print_errmsg(const char *format, va_list ap)
+{
+	vfprintf(stderr, format, ap);
+	putc('\n', stderr);
 }
 
 /*
@@ -45,17 +72,17 @@ long str_to_long(const char *str)
 	const int base = 10;
 
 	if (!str || *str == '\0')
-		err_exit("%s: null or empty string", __func__);
+		err_exit("%s: null or empty string", "str_to_long");
 	if (is_blanks(str))
 		return 0;
 
 	errno = 0;
 	res = strtol(str, &tailptr, base);
 	if (errno)		/* ERANGE */
-		err_exit("%s: overflow (%s)", __func__, str);
+		err_exit("%s: overflow (%s)", "str_to_long", str);
 	if (*tailptr)
 		err_exit("%s: not a base-10 numeric string (%s)",
-			 __func__, str, res);
+			 "str_to_long", str, res);
 
 	return res;
 }
@@ -79,7 +106,7 @@ void *resize_buff(void *buff, size_t new_size)
 
 	tmp = realloc(buff, new_size);
 	if (!tmp)
-		err_exit("%s(): not enough memory available", __func__);
+		err_exit("not enough memory available");
 
 	return tmp;
 }
