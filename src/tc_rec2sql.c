@@ -21,6 +21,10 @@
 #include "util.h"
 #include "ixfcvt.h"
 
+#define DEF_BUFF_SIZE 1000
+#define MIN_AVAIL_SIZE 100
+#define INCREMENT_SIZE 500
+
 static int define_column(char *buff, const struct column_desc *col);
 static int define_primary_key(char *buff, const struct column_desc *col_head);
 static int max_pk_idx(const struct column_desc *col_head);
@@ -28,27 +32,36 @@ static int max_pk_idx(const struct column_desc *col_head);
 /*
  * This function generates a CREATE TABLE statement from
  * the table struct and the coloumn descriptor list,
- * fills the buffer with it.
- *
- * Assumes that the buffer is large enough.
+ * then writes it to the file specified by `fd'.
  */
-char *define_table(char *buff, const struct table *tbl,
-		   const struct column_desc *col_head)
+void table_desc_to_sql(int fd, const struct table *tbl,
+		   	const struct column_desc *col_head)
 {
+	char *buff;
+	ssize_t size;
+	int stored;
 	const struct column_desc *col;
-	int char_stored;
 
-	char_stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->dat_name);
+	size = DEF_BUFF_SIZE;
+	buff = malloc(size);
+	if (!buff)
+		err_exit("not enough memory available");
+
+	stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->dat_name);
 	col = col_head->next;
 	while (col) {
-		char_stored += define_column(buff + char_stored, col);
+		stored += define_column(buff + stored, col);
 		col = col->next;
+		if (stored + MIN_AVAIL_SIZE > size) {
+			size += INCREMENT_SIZE;
+			buff = resize_buff(buff, size);
+		}
 	}
 
-	char_stored += define_primary_key(buff + char_stored, col_head);
-	strcpy(buff + char_stored, "\n);\n");
+	stored += define_primary_key(buff + stored, col_head);
+	strcpy(buff + stored, "\n);\n");
 
-	return buff;
+	write_file(fd, buff);
 }
 
 /* Writes the primary key list if any, returns the bytes written. */

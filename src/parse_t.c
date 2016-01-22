@@ -32,22 +32,28 @@
 static void strip_ext(char *name, const char *ext);
 
 /* parse a T record, store the info in a table struct */
-void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl)
+void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl, const char *table_name)
 {
 	static char buff[TBL_ATTR_BUFF_SIZE];
 	const unsigned char *walker;
 	int dat_name_len;
 	int pk_name_len;
 
-	memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
-	memcpy(buff, t_rec_buff + IXFTNAML_OFFSET, IXFTNAML_BYTES);
-	dat_name_len = str_to_long(buff);
-	tbl->dat_name = malloc(dat_name_len + 1);
-	if (!tbl->dat_name)
-		err_exit("not enough memory available");
-	memcpy(tbl->dat_name, t_rec_buff + IXFTNAME_OFFSET, dat_name_len);
-	tbl->dat_name[dat_name_len] = '\0';
-	strip_ext(tbl->dat_name, ".ixf");
+	if (!table_name) {
+		memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
+		memcpy(buff, t_rec_buff + IXFTNAML_OFFSET, IXFTNAML_BYTES);
+		dat_name_len = str_to_long(buff);
+		tbl->dat_name = malloc(dat_name_len + 1);
+		if (!tbl->dat_name)
+			err_exit("not enough memory available");
+		memcpy(tbl->dat_name, t_rec_buff + IXFTNAME_OFFSET, dat_name_len);
+		tbl->dat_name[dat_name_len] = '\0';
+		strip_ext(tbl->dat_name, ".ixf");
+	} else {
+		tbl->dat_name = strdup(table_name);
+		if (!tbl->dat_name)
+			err_exit("not enough memory available");
+	}
 
 	memcpy(buff, t_rec_buff + IXFTCCNT_OFFSET, IXFTCCNT_BYTES);
 	tbl->col_num = str_to_long(buff);

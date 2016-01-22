@@ -43,13 +43,15 @@ struct table {
 	char *pk_name;		/* name of the primary key */
 };
 
-void parse_table_record(const unsigned char *record, struct table *tbl);
+void parse_and_output(int ifd, int ofd, int cfd, const char *table_name);
+void parse_table_record(const unsigned char *record, struct table *tbl,
+			const char *table_name);
 void parse_column_desc_record(const unsigned char *c_rec_buff,
 			      struct column_desc *col_desc);
 void parse_data_record(const unsigned char *record,
 		       const struct column_desc *col_desc_head);
-char *define_table(char *buff, const struct table *tbl,
-		   const struct column_desc *col_head);
-void data_record_to_sql(const unsigned char *d_rec_buff,
+void table_desc_to_sql(int fd, const struct table *tbl,
+		       const struct column_desc *col_head);
+void data_record_to_sql(int fd, const unsigned char *d_rec_buff,
 			const struct table *tbl,
 			const struct column_desc *col_head);

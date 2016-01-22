@@ -22,7 +22,7 @@ CFLAGS_RELEASE = -O2 -DNDEBUG
 CPPFLAGS = -I.
 LDFLAGS = -L.
 LDLIBS =
-OBJS = ixfcvt.o def_tbl.o parse_d.o d_rec2sql.o parse_t.o parse_c.o util.o
+OBJS = main.o ixfcvt.o parse_t.o parse_c.o parse_d.o tc_rec2sql.o d_rec2sql.o util.o
 PROG = ixfcvt
 
 .PHONY : all

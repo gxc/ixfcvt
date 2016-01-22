@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "util.h"
 #include "ixfcvt.h"
@@ -33,7 +34,8 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
 /* convert D records of a row to a INSERT statement */
-void data_record_to_sql(const unsigned char *d_rec_buff,
+void data_record_to_sql(int fd,
+			const unsigned char *d_rec_buff,
 			const struct table *tbl,
 			const struct column_desc *col_head)
 {
@@ -50,7 +52,7 @@ void data_record_to_sql(const unsigned char *d_rec_buff,
 	if (!next_col) {
 		next_col = (struct column_desc *)col_head;
 		pos = buff;
-		fputs(buff, stdout);
+		write_file(fd, buff);
 	}
 }
 

@@ -33,23 +33,15 @@ static struct column_desc *append_col_node(struct column_desc *rear);
 static void free_col_desc(struct column_desc *head);
 static void free_tbl(struct table *tbl);
 
-/* TO-DO: provide an interface */
-int main(int argc, char *argv[])
+/* Do the converting process */
+void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 {
-	char path[1000];
 	unsigned char *buff;
 	ssize_t buff_size;
-	int fd;
-	int open_flags = O_RDONLY;
 	ssize_t rec_len;
 	struct table *tbl;
 	struct column_desc *col_head;
 	struct column_desc *col_node;
-
-	if (argc > 1 && access(argv[1], R_OK) == 0)
-		strcpy(path, argv[1]);
-	else
-		strcpy(path, "../test/test.ixf");
 
 	buff = malloc(DEF_BUFF_SIZE);
 	if (!buff)
@@ -67,28 +59,25 @@ int main(int argc, char *argv[])
 	col_head->name = NULL;
 	col_node = col_head;
 
-	if ((fd = open(path, open_flags)) == -1)
-		err_exit("failed to open file: %s", path);
-
-	while ((rec_len = get_record_len(fd)) > 0) {
+	while ((rec_len = get_record_len(ifd)) > 0) {
 		if (rec_len > buff_size)
 			buff = resize_buff(buff, rec_len);
 
-		if (!get_record(fd, buff, rec_len))
+		if (!get_record(ifd, buff, rec_len))
 			err_exit("input file corrupted");
 
 		switch (*buff) {
 		case 'H':
 			break;
 		case 'T':
-			parse_table_record(buff, tbl);
+			parse_table_record(buff, tbl, table_name);
 			break;
 		case 'C':
 			col_node = append_col_node(col_node);
 			parse_column_desc_record(buff, col_node);
 			break;
 		case 'D':
-			data_record_to_sql(buff, tbl, col_head);
+			data_record_to_sql(ofd, buff, tbl, col_head);
 			break;
 		case 'A':
 			break;
@@ -100,17 +89,10 @@ int main(int argc, char *argv[])
 	if (rec_len == -1)
 		err_exit("read record content failed, data wrong");
 
-	/* TO-DO: modify this, no buff_def */
-	/* print the create table clauses */
-	char buff_def[5000];
-	puts(define_table(buff_def, tbl, col_head));
+	table_desc_to_sql(cfd, tbl, col_head);
 
 	free_col_desc(col_head);
 	free_tbl(tbl);
-	if (close(fd) == -1)
-		err_exit("failed to close file: %s", path);
-
-	return 0;
 }
 
 /* Fills the buffer with a record, returns true on success, false on error. */
@@ -141,7 +123,7 @@ static struct column_desc *append_col_node(struct column_desc *rear)
 
 	node = malloc(sizeof(struct column_desc));
 	if (!node)
-		err_exit("%s: not enough memory available", __func__);
+		err_exit("not enough memory available");
 	rear->next = node;
 	node->next = NULL;
 
