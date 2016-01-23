@@ -15,7 +15,6 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "util.h"
@@ -43,10 +42,7 @@ void table_desc_to_sql(int fd, const struct table *tbl,
 	const struct column_desc *col;
 
 	size = DEF_BUFF_SIZE;
-	buff = malloc(size);
-	if (!buff)
-		err_exit("not enough memory available");
-
+	buff = alloc_buff(size);
 	stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->dat_name);
 	col = col_head->next;
 	while (col) {

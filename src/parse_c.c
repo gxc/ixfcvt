@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
 #include <string.h>
 
 #include "util.h"
@@ -48,9 +47,7 @@ void parse_column_desc_record(const unsigned char *c_rec_buff,
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
 	memcpy(buff, c_rec_buff + IXFCNAML_OFFSET, IXFCNAML_BYTES);
 	col_name_len = str_to_long(buff);
-	col_desc->name = malloc(col_name_len + 1);
-	if (!col_desc->name)
-		err_exit("not enough memory available");
+	col_desc->name = alloc_buff(col_name_len + 1);
 	memcpy(col_desc->name, c_rec_buff + IXFCNAME_OFFSET, col_name_len);
 	col_desc->name[col_name_len] = '\0';
 

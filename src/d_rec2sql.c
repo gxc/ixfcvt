@@ -15,9 +15,7 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "util.h"
 #include "ixfcvt.h"
@@ -166,7 +164,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 		/*TO-DO:use alloca ? */
 		ascii_dec = decode_packed_decimal(src, col->length);
 		buff += sprintf(buff, ascii_dec);
-		free(ascii_dec);
+		free_buff(ascii_dec);
 		break;
 	case TIMESTAMP:
 		buff = write_as_sql_str(buff, src, col->length);

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -74,9 +73,10 @@ char *decode_packed_decimal(const unsigned char *buff, size_t data_length)
 {
 	int precision;
 	int scale;
-	int bytes;
+	size_t bytes;
 	_Bool is_neg;
 	char *ascii_buf;
+	size_t ascii_buf_size;
 	char *asc_walker;
 	const unsigned char *last_byte;
 
@@ -87,9 +87,9 @@ char *decode_packed_decimal(const unsigned char *buff, size_t data_length)
 	assert(scale >= 0 && scale < precision);
 
 	/* allocate 2 extra bytes for a decimal point and a trailing '\0' */
-	ascii_buf = calloc(1, bytes * 2 + 2);
-	if (!ascii_buf)
-		err_exit("not enough memory available");
+	ascii_buf_size = bytes * 2 + 2;
+	ascii_buf = alloc_buff(ascii_buf_size);
+	memset(ascii_buf, 0x00, ascii_buf_size);
 	asc_walker = ascii_buf;
 
 	/* extract the sign from the last nibble */

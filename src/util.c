@@ -102,19 +102,37 @@ static _Bool is_blanks(const char *str)
 	return 1;
 }
 
-/* Returns a pointer to the newly allocated buffer */
+/* wrapper function for malloc; it exits if fail */
+void *alloc_buff(size_t size)
+{
+	void *buff;
+
+	buff = malloc (size);
+	if (!buff)
+		err_exit("virtual memory exhausted");
+
+	return buff;
+}
+
+/* wrapper function for realloc; it exits if fail */
 void *resize_buff(void *buff, size_t new_size)
 {
 	void *tmp;
 
 	tmp = realloc(buff, new_size);
 	if (!tmp)
-		err_exit("not enough memory available");
+		err_exit("virtual memory exhausted");
 
 	return tmp;
 }
 
-/* open file, return file descripter; exit on error */
+/* free a buffer */
+void free_buff(void *buff)
+{
+	free(buff);
+}
+
+/* wrapper function for open; exit on error */
 int open_file(const char *file, int oflags, mode_t mode)
 {
 	int fd;
@@ -125,7 +143,7 @@ int open_file(const char *file, int oflags, mode_t mode)
 	return fd;
 }
 
-/* close file; exit on error */
+/* wrappper function for close; exit on error */
 void close_file(int fd)
 {
 	if (close(fd) == -1)

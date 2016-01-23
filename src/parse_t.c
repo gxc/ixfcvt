@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
@@ -43,9 +42,7 @@ void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl, cons
 		memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
 		memcpy(buff, t_rec_buff + IXFTNAML_OFFSET, IXFTNAML_BYTES);
 		dat_name_len = str_to_long(buff);
-		tbl->dat_name = malloc(dat_name_len + 1);
-		if (!tbl->dat_name)
-			err_exit("not enough memory available");
+		tbl->dat_name = alloc_buff(dat_name_len + 1);
 		memcpy(tbl->dat_name, t_rec_buff + IXFTNAME_OFFSET, dat_name_len);
 		tbl->dat_name[dat_name_len] = '\0';
 		strip_ext(tbl->dat_name, ".ixf");
@@ -61,9 +58,7 @@ void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl, cons
 	pk_name_len = 1;	/* 1 for '\0' */
 	for (walker = t_rec_buff + IXFTPKNM_OFFSET; *walker; walker++)
 		pk_name_len++;
-	tbl->pk_name = malloc(pk_name_len);
-	if (!tbl->pk_name)
-		err_exit("not enough memory available");
+	tbl->pk_name = alloc_buff(pk_name_len);
 	memcpy(tbl->pk_name, t_rec_buff + IXFTPKNM_OFFSET, pk_name_len);
 }
 

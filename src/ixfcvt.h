@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <sys/types.h>
+
 enum DB2_DATA_TYPE {
 	/* not a complete list */
 	CHAR = 452,

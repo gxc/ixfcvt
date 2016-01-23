@@ -24,7 +24,7 @@
 #include "ixfcvt.h"
 
 #ifdef DEBUG
-#define VERSION "<debug version>"
+#define VERSION "<debug version based on V0.10>"
 #else
 #define VERSION "0.10"
 #endif

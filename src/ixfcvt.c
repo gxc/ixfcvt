@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "util.h"
 #include "ixfcvt.h"
@@ -43,18 +38,11 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 	struct column_desc *col_head;
 	struct column_desc *col_node;
 
-	buff = malloc(DEF_BUFF_SIZE);
-	if (!buff)
-		err_exit("not enough memory available");
+	buff = alloc_buff(DEF_BUFF_SIZE);
 	buff_size = DEF_BUFF_SIZE;
 
-	tbl = malloc(sizeof(struct table));
-	if (!tbl)
-		err_exit("not enough memory available");
-
-	col_head = malloc(sizeof(struct column_desc));
-	if (!col_head)
-		err_exit("not enough memory available");
+	tbl = alloc_buff(sizeof(struct table));
+	col_head = alloc_buff(sizeof(struct column_desc));
 	/* only name of head can be NULL */
 	col_head->name = NULL;
 	col_node = col_head;
@@ -121,9 +109,7 @@ static struct column_desc *append_col_node(struct column_desc *rear)
 {
 	struct column_desc *node;
 
-	node = malloc(sizeof(struct column_desc));
-	if (!node)
-		err_exit("not enough memory available");
+	node = alloc_buff(sizeof(struct column_desc));
 	rear->next = node;
 	node->next = NULL;
 
@@ -133,9 +119,9 @@ static struct column_desc *append_col_node(struct column_desc *rear)
 /* free the T record */
 static void free_tbl(struct table *tbl)
 {
-	free(tbl->dat_name);
-	free(tbl->pk_name);
-	free(tbl);
+	free_buff(tbl->dat_name);
+	free_buff(tbl->pk_name);
+	free_buff(tbl);
 }
 
 /* free C records */
@@ -145,8 +131,8 @@ static void free_col_desc(struct column_desc *head)
 	while (head->next) {
 		node = head->next;
 		head->next = node->next;
-		free(node->name);
-		free(node);
+		free_buff(node->name);
+		free_buff(node);
 	}
-	free(head);
+	free_buff(head);
 }

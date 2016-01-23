@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <sys/types.h>
+
 #define IXFDCOLS_OFFSET 8
 #define VARCHAR_CUR_LEN_IND_BYTES 2
 #define NULL_VAL_IND_BYTES 2
