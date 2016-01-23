@@ -49,7 +49,7 @@ void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl, cons
 	} else {
 		tbl->dat_name = strdup(table_name);
 		if (!tbl->dat_name)
-			err_exit("not enough memory available");
+			err_exit("virtual memory exhausted");
 	}
 
 	memcpy(buff, t_rec_buff + IXFTCCNT_OFFSET, IXFTCCNT_BYTES);

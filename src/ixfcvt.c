@@ -15,20 +15,29 @@
  */
 
 #include <unistd.h>
+#include <stdbool.h>
 
 #include "util.h"
 #include "ixfcvt.h"
 
 #define REC_LEN_BYTES 6
 #define DEF_BUFF_SIZE 4096
+#define IXF_BAD_FORMAT "Not a valid IXF file"
 
 static ssize_t get_record_len(const int fd);
-static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size);
+static bool get_record(const int fd, unsigned char *buff, ssize_t rec_size);
 static struct column_desc *append_col_node(struct column_desc *rear);
 static void free_col_desc(struct column_desc *head);
 static void free_tbl(struct table *tbl);
 
-/* Do the converting process */
+/*
+ * perform the conversion process
+ *
+ * ifd: input file of format IXF
+ * ofd: output file for INSERT statements
+ * cfd: output file for CREATE TABLE statement
+ * table_name: user defined table name
+ */
 void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 {
 	unsigned char *buff;
@@ -52,7 +61,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 			buff = resize_buff(buff, rec_len);
 
 		if (!get_record(ifd, buff, rec_len))
-			err_exit("input file corrupted");
+			err_exit(IXF_BAD_FORMAT);
 
 		switch (*buff) {
 		case 'H':
@@ -65,18 +74,20 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 			parse_column_desc_record(buff, col_node);
 			break;
 		case 'D':
+			/* produce INSERT statement according to D record */
 			data_record_to_sql(ofd, buff, tbl, col_head);
 			break;
 		case 'A':
 			break;
 		default:
-			err_exit("not a valid IXF file");
+			err_exit(IXF_BAD_FORMAT);
 		}
 	}
 
 	if (rec_len == -1)
-		err_exit("read record content failed, data wrong");
+		err_exit(IXF_BAD_FORMAT);
 
+	/* output CREATE TABLE statement */
 	table_desc_to_sql(cfd, tbl, col_head);
 
 	free_col_desc(col_head);
@@ -84,11 +95,11 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 }
 
 /* Fills the buffer with a record, returns true on success, false on error. */
-static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size)
+static bool get_record(const int fd, unsigned char *buff, ssize_t rec_size)
 {
 	if (read(fd, buff, rec_size) == rec_size)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 /* Returns the size of next record on success, -1 on error, 0 on EOF. */

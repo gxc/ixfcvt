@@ -91,6 +91,7 @@ static void tweak_col_length(struct column_desc *col_desc)
 		col_desc->length = 4U;
 		break;
 	case TIMESTAMP:
+		/* 20 is the number of characters before point */
 		col_desc->length += 20U;
 		break;
 	default:
