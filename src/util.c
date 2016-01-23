@@ -107,7 +107,7 @@ void *alloc_buff(size_t size)
 {
 	void *buff;
 
-	buff = malloc (size);
+	buff = malloc(size);
 	if (!buff)
 		err_exit("virtual memory exhausted");
 

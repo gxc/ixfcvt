@@ -34,7 +34,7 @@ static int max_pk_idx(const struct column_desc *col_head);
  * then writes it to the file specified by `fd'.
  */
 void table_desc_to_sql(int fd, const struct table *tbl,
-		   	const struct column_desc *col_head)
+		       const struct column_desc *col_head)
 {
 	char *buff;
 	ssize_t size;

@@ -31,7 +31,8 @@
 static void strip_ext(char *name, const char *ext);
 
 /* parse a T record, store the info in a table struct */
-void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl, const char *table_name)
+void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl,
+			const char *table_name)
 {
 	static char buff[TBL_ATTR_BUFF_SIZE];
 	const unsigned char *walker;
@@ -43,7 +44,8 @@ void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl, cons
 		memcpy(buff, t_rec_buff + IXFTNAML_OFFSET, IXFTNAML_BYTES);
 		dat_name_len = str_to_long(buff);
 		tbl->dat_name = alloc_buff(dat_name_len + 1);
-		memcpy(tbl->dat_name, t_rec_buff + IXFTNAME_OFFSET, dat_name_len);
+		memcpy(tbl->dat_name, t_rec_buff + IXFTNAME_OFFSET,
+		       dat_name_len);
 		tbl->dat_name[dat_name_len] = '\0';
 		strip_ext(tbl->dat_name, ".ixf");
 	} else {
