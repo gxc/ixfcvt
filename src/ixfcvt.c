@@ -1,0 +1,149 @@
+/*
+ * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <unistd.h>
+#include <stdbool.h>
+
+#include "util.h"
+#include "ixfcvt.h"
+
+#define REC_LEN_BYTES 6
+#define DEF_BUFF_SIZE 4096
+#define IXF_BAD_FORMAT "Not a valid IXF file"
+
+static ssize_t get_record_len(const int fd);
+static bool get_record(const int fd, unsigned char *buff, ssize_t rec_size);
+static struct column_desc *append_col_node(struct column_desc *rear);
+static void free_col_desc(struct column_desc *head);
+static void free_tbl(struct table *tbl);
+
+/*
+ * perform the conversion process
+ *
+ * ifd: input file of format IXF
+ * ofd: output file for INSERT statements
+ * cfd: output file for CREATE TABLE statement
+ * table_name: user defined table name
+ */
+void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
+{
+	unsigned char *buff;
+	ssize_t buff_size;
+	ssize_t rec_len;
+	struct table *tbl;
+	struct column_desc *col_head;
+	struct column_desc *col_node;
+
+	buff = alloc_buff(DEF_BUFF_SIZE);
+	buff_size = DEF_BUFF_SIZE;
+
+	tbl = alloc_buff(sizeof(struct table));
+	col_head = alloc_buff(sizeof(struct column_desc));
+	/* only name of head can be NULL */
+	col_head->name = NULL;
+	col_node = col_head;
+
+	while ((rec_len = get_record_len(ifd)) > 0) {
+		if (rec_len > buff_size)
+			buff = resize_buff(buff, rec_len);
+
+		if (!get_record(ifd, buff, rec_len))
+			err_exit(IXF_BAD_FORMAT);
+
+		switch (*buff) {
+		case 'H':
+			break;
+		case 'T':
+			parse_table_record(buff, tbl, table_name);
+			break;
+		case 'C':
+			col_node = append_col_node(col_node);
+			parse_column_desc_record(buff, col_node);
+			break;
+		case 'D':
+			/* produce INSERT statement according to D record */
+			data_record_to_sql(ofd, buff, tbl, col_head);
+			break;
+		case 'A':
+			break;
+		default:
+			err_exit(IXF_BAD_FORMAT);
+		}
+	}
+
+	if (rec_len == -1)
+		err_exit(IXF_BAD_FORMAT);
+
+	/* output CREATE TABLE statement */
+	table_desc_to_sql(cfd, tbl, col_head);
+
+	free_col_desc(col_head);
+	free_tbl(tbl);
+}
+
+/* Fills the buffer with a record, returns true on success, false on error. */
+static bool get_record(const int fd, unsigned char *buff, ssize_t rec_size)
+{
+	if (read(fd, buff, rec_size) == rec_size)
+		return true;
+	return false;
+}
+
+/* Returns the size of next record on success, -1 on error, 0 on EOF. */
+static ssize_t get_record_len(const int fd)
+{
+	static char buff[REC_LEN_BYTES + 1];
+	ssize_t num_read;
+
+	num_read = read(fd, buff, REC_LEN_BYTES);
+	if (num_read == REC_LEN_BYTES)
+		return str_to_long(buff);
+	else
+		return num_read;
+}
+
+/* Allocates a new column_desc struct and appends it to `rear' */
+static struct column_desc *append_col_node(struct column_desc *rear)
+{
+	struct column_desc *node;
+
+	node = alloc_buff(sizeof(struct column_desc));
+	rear->next = node;
+	node->next = NULL;
+
+	return node;
+}
+
+/* free the T record */
+static void free_tbl(struct table *tbl)
+{
+	free_buff(tbl->dat_name);
+	free_buff(tbl->pk_name);
+	free_buff(tbl);
+}
+
+/* free C records */
+static void free_col_desc(struct column_desc *head)
+{
+	struct column_desc *node;
+	while (head->next) {
+		node = head->next;
+		head->next = node->next;
+		free_buff(node->name);
+		free_buff(node);
+	}
+	free_buff(head);
+}
