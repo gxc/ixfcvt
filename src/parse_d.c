@@ -65,55 +65,53 @@ size_t get_varchar_cur_len(const unsigned char *len_ind)
 }
 
 /*
- * This function decodes the packed-decimal bytes into a newly
- * allocated ASCII string, and returns a pointer to the new string.
+ * This function decodes the packed-decimal bytes in `src' into ASCII
+ * characters in 'buff', and returns a pointer to the byte following
+ * the last character.
  * `data_length' is the original length specified by IXFCLENG
  */
-char *decode_packed_decimal(const unsigned char *buff, size_t data_length)
+char *decode_packed_decimal(char *buff, const unsigned char *src,
+			    size_t data_length)
 {
 	int precision;
 	int scale;
-	size_t bytes;
+	size_t bytes;		/* bytes occupied by the packed-decimal */
+	const unsigned char *last_byte;	/* of the decimal in `src' */
 	_Bool is_neg;
-	char *ascii_buf;
-	size_t ascii_buf_size;
-	char *asc_walker;
-	const unsigned char *last_byte;
+	char *bp;
 
+	bp = buff;
 	precision = data_length / 100;
 	scale = data_length % 100;
-	bytes = (precision + 2) / 2;
 	assert(precision > 0 && precision < 32);
 	assert(scale >= 0 && scale < precision);
 
-	/* allocate 2 extra bytes for a decimal point and a trailing '\0' */
-	ascii_buf_size = bytes * 2 + 2;
-	ascii_buf = alloc_buff(ascii_buf_size);
-	memset(ascii_buf, 0x00, ascii_buf_size);
-	asc_walker = ascii_buf;
-
 	/* extract the sign from the last nibble */
-	last_byte = buff + bytes - 1;
+	bytes = (precision + 2) / 2;
+	last_byte = src + bytes - 1;
 	is_neg = (*last_byte & LOW_NIBBLE) == NEGATIVE_SIGN;
 	if (is_neg)
-		*asc_walker++ = '-';
+		*bp++ = '-';
 
-	while (buff < last_byte) {
-		*asc_walker++ = *buff >> 4 | DIGIT_HIGH_NIBBLE;
-		*asc_walker++ = (*buff++ & LOW_NIBBLE) | DIGIT_HIGH_NIBBLE;
+	while (src < last_byte) {
+		*bp++ = *src >> 4 | DIGIT_HIGH_NIBBLE;
+		*bp++ = (*src++ & LOW_NIBBLE) | DIGIT_HIGH_NIBBLE;
 	}
-	*asc_walker = *buff >> 4 | DIGIT_HIGH_NIBBLE;
+	*bp = *src >> 4 | DIGIT_HIGH_NIBBLE;
 
 	/* place the decimal point if necessary */
 	if (scale) {
 		while (scale-- > 0) {
-			*(asc_walker + 1) = *asc_walker;
-			asc_walker--;
+			*(bp + 1) = *bp;
+			bp--;
 		}
-		*++asc_walker = '.';
+		*++bp = '.';
 	}
 
-	return squeeze_zeros(ascii_buf);
+	*(bp + scale + 1) = '\0';
+	squeeze_zeros(buff);
+
+	return buff + strlen(buff);
 }
 
 /* squeeze redundant zeros out of a null-terminated decimal string */
@@ -129,7 +127,7 @@ static char *squeeze_zeros(char *decimal)
 	start = decimal + has_sign;
 	while (*start && *start == '0')
 		++start;
-	if (!*start || *start == '.')
+	if (*start == '\0' || *start == '.')
 		--start;
 	memmove(decimal + has_sign, start, strlen(start) + 1);
 

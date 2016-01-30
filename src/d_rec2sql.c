@@ -130,7 +130,6 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 {
 	unsigned cur_len;
 	long num_val;
-	char *ascii_dec;
 
 	if (col->nullable) {
 		if (column_is_null(src)) {
@@ -161,10 +160,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 		buff += sprintf(buff, "%ld", num_val);
 		break;
 	case DECIMAL:
-		/*TO-DO:use alloca ? */
-		ascii_dec = decode_packed_decimal(src, col->length);
-		buff += sprintf(buff, ascii_dec);
-		free_buff(ascii_dec);
+		buff = decode_packed_decimal(buff, src, col->length);
 		break;
 	case TIMESTAMP:
 		buff = write_as_sql_str(buff, src, col->length);
@@ -194,9 +190,6 @@ static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len)
 			*buff++ = *src;
 		src++;
 	}
-	/* trim is not needed */
-	/* while (*(buff - 1) == ' ') */
-	/*      --buff; */
 	*buff++ = '\'';
 
 	return buff;

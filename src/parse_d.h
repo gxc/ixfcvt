@@ -22,6 +22,7 @@
 
 long parse_ixf_integer(const unsigned char *src, size_t bytes);
 _Bool column_is_null(const unsigned char *null_ind);
-char *decode_packed_decimal(const unsigned char *buff, size_t data_length);
+char *decode_packed_decimal(char *buff, const unsigned char *src,
+			    size_t data_length);
 size_t get_varchar_cur_len(const unsigned char *len_ind);
 size_t varchar_len_ind_size(void);
