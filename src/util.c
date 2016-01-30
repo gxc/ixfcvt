@@ -129,7 +129,8 @@ void *resize_buff(void *buff, size_t new_size)
 /* free a buffer */
 void free_buff(void *buff)
 {
-	free(buff);
+	if (buff)
+		free(buff);
 }
 
 /* wrapper function for open; exit on error */
