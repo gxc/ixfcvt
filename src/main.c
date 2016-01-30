@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <locale.h>
@@ -24,9 +25,9 @@
 #include "ixfcvt.h"
 
 #ifdef DEBUG
-#define VERSION "<debug version based on V0.10>"
+#define VERSION "<debug version based on V0.20>"
 #else
-#define VERSION "0.10"
+#define VERSION "V0.20"
 #endif
 
 int main(int argc, char *argv[])
@@ -65,7 +66,7 @@ Options:\n\
                 <OFILE> should differ from <CFILE>\n\
     -t TNAME    use <TNAME> as the table name when output\n\
                 If not specified, use data name of <IXFFILE>\n\
-    -v          show version: \"ixfcvt V0.10 by Guo, Xingchun\"\n\
+    -v          show version: \"ixfcvt %s by Guo, Xingchun\"\n\
 \n\
 ";
 
@@ -83,31 +84,31 @@ Options:\n\
 	int c;
 
 	setlocale(LC_ALL, "");
-
-	if (argc > 1) {
-		if (strcmp(argv[1], "-h") == 0
-		    || strcmp(argv[1], "--help") == 0)
-			usage(EXIT_SUCCESS, usage_info, argv[0]);
-		if (strcmp(argv[1], "-v") == 0
-		    || strcmp(argv[1], "--version") == 0)
-			usage(EXIT_SUCCESS, version_info, VERSION);
-	}
+	if (argc == 1)
+		usage(EXIT_FAILURE, usage_info, argv[0], VERSION);
 
 	ifile = NULL;
 	ofile = NULL;
 	cfile = NULL;
 	tname = NULL;
 	errflg = 0;
-	while ((c = getopt(argc, argv, ":c:o:t:")) != -1) {
+	while ((c = getopt(argc, argv, ":c:o:t:hv")) != -1) {
 		switch (c) {
 		case 'c':
 			cfile = optarg;
+			break;
+		case 'h':
+			usage(errflg ? EXIT_FAILURE : EXIT_SUCCESS, usage_info,
+			      argv[0], VERSION);
 			break;
 		case 'o':
 			ofile = optarg;
 			break;
 		case 't':
 			tname = optarg;
+			break;
+		case 'v':
+			usage(EXIT_SUCCESS, version_info, VERSION);
 			break;
 		case ':':
 			errflg++;
@@ -131,7 +132,7 @@ Options:\n\
 	}
 
 	if (errflg)
-		usage(EXIT_FAILURE, usage_info, argv[0]);
+		usage(EXIT_FAILURE, usage_info, argv[0], VERSION);
 
 	oflags = O_WRONLY | O_CREAT | O_TRUNC;
 	mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
