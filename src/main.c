@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <locale.h>
-#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-#include "util.h"
 #include "ixfcvt.h"
+#include "util.h"
 
 #ifdef DEBUG
-#define VERSION "V0.20 <debug>"
+#define VERSION "v0.20 <debug>"
 #else
-#define VERSION "V0.20"
+#define VERSION "v0.20"
 #endif
 
-static void ignore_lock_fail(const char *filename);
+static void ignore_lock_fail_or_exit(const char *filename);
 
 int main(int argc, char *argv[])
 {
@@ -140,12 +140,12 @@ Options:\n\
 	mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 	ifd = open_file(ifile, O_RDONLY, 0);
 	if (!lock_entire_file(ifd, F_RDLCK))
-		ignore_lock_fail(ifile);
+		ignore_lock_fail_or_exit(ifile);
 
 	if (ofile) {
 		ofd = open_file(ofile, oflags, mode);
 		if (!lock_entire_file(ofd, F_WRLCK))
-			ignore_lock_fail(ofile);
+			ignore_lock_fail_or_exit(ofile);
 	} else {
 		ofd = STDOUT_FILENO;
 	}
@@ -153,7 +153,7 @@ Options:\n\
 	if (cfile) {
 		cfd = open_file(cfile, oflags, mode);
 		if (!lock_entire_file(cfd, F_WRLCK))
-			ignore_lock_fail(cfile);
+			ignore_lock_fail_or_exit(cfile);
 	} else {
 		cfd = open_file("/dev/null", O_WRONLY, 0);
 	}
@@ -167,27 +167,15 @@ Options:\n\
 	return 0;
 }
 
-static void ignore_lock_fail(const char *filename)
+/* prompt user to deside whether to ignore the file lock failure or to exit */
+static void ignore_lock_fail_or_exit(const char *filename)
 {
-	int c;
-	int ans;
+	_Bool is_ignored;
 
-	printf("Failed to lock file: %s\n"
-	       "Do you want to continue? (y/n):", filename);
-	while (1) {
-		fputc(' ', stdout);
-		c = fgetc(stdin);
-		ans = c;
+	fprintf(stdout, "Failed to lock file: %s\n"
+		"Do you want to continue?", filename);
+	is_ignored = prompt_y_or_n();
 
-		/* eat the rest of the input, if any */
-		while (c != EOF && c != '\n')
-			c = fgetc(stdin);
-
-		if (ans == 'n')
-			exit(EXIT_SUCCESS);
-		if (ans == 'y')
-			break;
-
-		fputs("Please answer y or n:", stdout);
-	}
+	if (!is_ignored)
+		exit(EXIT_FAILURE);
 }

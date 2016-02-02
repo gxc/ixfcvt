@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
+#include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <stdarg.h>
-#include <errno.h>
+#include <unistd.h>
 
 static void print_errmsg(const char *format, va_list ap);
 static _Bool is_blanks(const char *str);
@@ -182,4 +183,28 @@ _Bool lock_entire_file(int fd, short lock_type)
 		return 1;
 	else
 		return 0;
+}
+
+/* Prompts user to choose y or n, returns true or false respectively. */
+_Bool prompt_y_or_n(void)
+{
+	int c;
+	int ans;
+
+	fputs(" (y/n): ", stdout);
+	while (1) {
+		c = fgetc(stdin);
+		ans = tolower(c);
+
+		/* eat the rest of the input, if any */
+		while (c != EOF && c != '\n')
+			c = fgetc(stdin);
+
+		if (ans == 'y')
+			return 1;
+		if (ans == 'n')
+			return 0;
+
+		fputs("Please answer y or n: ", stdout);
+	}
 }

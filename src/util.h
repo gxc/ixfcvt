@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef IXFCVT_UTIL_H_
+#define IXFCVT_UTIL_H_
+
 #include <sys/types.h>
 
 void err_msg(const char *format, ...);
@@ -27,3 +30,6 @@ int open_file(const char *file, int oflags, mode_t mode);
 void close_file(int fd);
 void write_file(int fd, const char *buff);
 _Bool lock_entire_file(int fd, short lock_type);
+_Bool prompt_y_or_n(void);
+
+#endif
