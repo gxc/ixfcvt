@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef IXFCVT_IXFCVT_H_
+#define IXFCVT_IXFCVT_H_
+
 #include <sys/types.h>
 
 enum DB2_DATA_TYPE {
@@ -57,3 +60,5 @@ void table_desc_to_sql(int fd, const struct table *tbl,
 void data_record_to_sql(int fd, const unsigned char *d_rec_buff,
 			const struct table *tbl,
 			const struct column_desc *col_head);
+
+#endif

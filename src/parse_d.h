@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef IXFCVT_PARSE_D_H_
+#define IXFCVT_PARSE_D_H_
+
 #include <sys/types.h>
 
 #define IXFDCOLS_OFFSET 8
@@ -26,3 +29,5 @@ char *decode_packed_decimal(char *buff, const unsigned char *src,
 			    size_t data_length);
 size_t get_varchar_cur_len(const unsigned char *len_ind);
 size_t varchar_len_ind_size(void);
+
+#endif
