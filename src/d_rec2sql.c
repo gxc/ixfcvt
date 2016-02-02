@@ -17,9 +17,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "util.h"
 #include "ixfcvt.h"
 #include "parse_d.h"
+#include "util.h"
 
 #define D_REC_BUFF_SIZE 32780
 

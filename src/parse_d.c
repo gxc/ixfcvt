@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include <string.h>
 #include <assert.h>
+#include <string.h>
 
-#include "util.h"
 #include "parse_d.h"
+#include "util.h"
 
 #define LOW_NIBBLE 0x0F
 #define HIGH_NIBBLE 0xF0

@@ -15,17 +15,16 @@
  */
 
 #include <unistd.h>
-#include <stdbool.h>
 
-#include "util.h"
 #include "ixfcvt.h"
+#include "util.h"
 
 #define REC_LEN_BYTES 6
 #define DEF_BUFF_SIZE 4096
 #define IXF_BAD_FORMAT "Not a valid IXF file"
 
 static ssize_t get_record_len(const int fd);
-static bool get_record(const int fd, unsigned char *buff, ssize_t rec_size);
+static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size);
 static struct column_desc *append_col_node(struct column_desc *rear);
 static void free_col_desc(struct column_desc *head);
 static void free_tbl(struct table *tbl);
@@ -95,11 +94,11 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 }
 
 /* Fills the buffer with a record, returns true on success, false on error. */
-static bool get_record(const int fd, unsigned char *buff, ssize_t rec_size)
+static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size)
 {
 	if (read(fd, buff, rec_size) == rec_size)
-		return true;
-	return false;
+		return 1;
+	return 0;
 }
 
 /* Returns the size of next record on success, -1 on error, 0 on EOF. */

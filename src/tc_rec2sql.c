@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "util.h"
 #include "ixfcvt.h"
+#include "util.h"
 
 #define DEF_BUFF_SIZE 1000
 #define MIN_AVAIL_SIZE 100

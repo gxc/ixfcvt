@@ -17,8 +17,8 @@
 #include <string.h>
 #include <strings.h>
 
-#include "util.h"
 #include "ixfcvt.h"
+#include "util.h"
 
 #define IXFTNAML_OFFSET 1
 #define IXFTNAML_BYTES 3
