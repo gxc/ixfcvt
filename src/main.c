@@ -30,6 +30,8 @@
 #define VERSION "V0.20"
 #endif
 
+static void ignore_lock_fail(const char *filename);
+
 int main(int argc, char *argv[])
 {
 	const char *const version_info = "\n\
@@ -137,16 +139,24 @@ Options:\n\
 	oflags = O_WRONLY | O_CREAT | O_TRUNC;
 	mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 	ifd = open_file(ifile, O_RDONLY, 0);
+	if (!lock_entire_file(ifd, F_RDLCK))
+		ignore_lock_fail(ifile);
 
-	if (ofile)
+	if (ofile) {
 		ofd = open_file(ofile, oflags, mode);
-	else
+		if (!lock_entire_file(ofd, F_WRLCK))
+			ignore_lock_fail(ofile);
+	} else {
 		ofd = STDOUT_FILENO;
+	}
 
-	if (cfile)
+	if (cfile) {
 		cfd = open_file(cfile, oflags, mode);
-	else
+		if (!lock_entire_file(cfd, F_WRLCK))
+			ignore_lock_fail(cfile);
+	} else {
 		cfd = open_file("/dev/null", O_WRONLY, 0);
+	}
 
 	parse_and_output(ifd, ofd, cfd, tname);
 
@@ -155,4 +165,29 @@ Options:\n\
 	close_file(cfd);
 
 	return 0;
+}
+
+static void ignore_lock_fail(const char *filename)
+{
+	int c;
+	int ans;
+
+	printf("Failed to lock file: %s\n"
+	       "Do you want to continue? (y/n):", filename);
+	while (1) {
+		fputc(' ', stdout);
+		c = fgetc(stdin);
+		ans = c;
+
+		/* eat the rest of the input, if any */
+		while (c != EOF && c != '\n')
+			c = fgetc(stdin);
+
+		if (ans == 'n')
+			exit(EXIT_SUCCESS);
+		if (ans == 'y')
+			break;
+
+		fputs("Please answer y or n:", stdout);
+	}
 }

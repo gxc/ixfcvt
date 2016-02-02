@@ -26,3 +26,4 @@ void free_buff(void *buff);
 int open_file(const char *file, int oflags, mode_t mode);
 void close_file(int fd);
 void write_file(int fd, const char *buff);
+_Bool lock_entire_file(int fd, short lock_type);

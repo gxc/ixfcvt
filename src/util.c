@@ -163,3 +163,23 @@ void write_file(int fd, const char *buff)
 	else if (written != to_write)
 		err_exit("output file: resource limit reached");
 }
+
+/* locks an entire file, returns true on success, false otherwise */
+_Bool lock_entire_file(int fd, short lock_type)
+{
+	struct flock lck;
+
+	if (lock_type != F_RDLCK && lock_type != F_WRLCK
+	    && lock_type != F_UNLCK)
+		err_exit("wrong lock type: %hd", lock_type);
+
+	lck.l_type = lock_type;
+	lck.l_whence = SEEK_SET;
+	lck.l_start = 0;
+	lck.l_len = 0;
+
+	if (fcntl(fd, F_SETLK, &lck) == 0)
+		return 1;
+	else
+		return 0;
+}
