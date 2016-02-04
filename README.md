@@ -4,7 +4,7 @@
 
 Building:
 
-    cd src && make release
+    cd src && make
 Usage:
 
     ixfcvt [-c CFILE] [-t TNAME] [-o OFILE] IXFFILE
@@ -21,9 +21,10 @@ Options:
     -t TNAME    use <TNAME> as the table name when output
                 If not specified, use data name of <IXFFILE>
     -v          show version: "ixfcvt V0.10 by Guo, Xingchun"
-Example:
+Examples:
 
     ./ixfcvt -c create_table.sql -t NEW_TABLE -o insert_new_table.sql source.ixf
+    ./ixfcvt -c create_table.sql -o insert_new_table.sql source.ixf
     ./ixfcvt -t NEW_TABLE -o insert_new_table.sql source.ixf
     ./ixfcvt -o insert_new_table.sql source.ixf
     ./ixfcvt source.ixf
