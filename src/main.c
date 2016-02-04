@@ -124,10 +124,10 @@ Options:\n\
 	}
 
 	if (optind == argc) {
-		err_msg("No input IXF file specified.");
+		err_msg("%s", "No input IXF file specified.");
 		errflg++;
 	} else if (argc - optind > 1) {
-		err_msg("Too many input files.");
+		err_msg("%s", "Too many input files specified.");
 		errflg++;
 	} else {
 		ifile = argv[optind];
