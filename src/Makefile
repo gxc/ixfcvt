@@ -27,13 +27,13 @@ PROG = ixfcvt
 
 .PHONY : all
 
+.PHONY : release
+release : CFLAGS += $(CFLAGS_RELEASE)
+release : all
+
 .PHONY : debug
 debug : CFLAGS += $(CFLAGS_DEBUG)
 debug : all
-
-.PHONY : release
-release : CFLAGS += $(CFLAGS_RELEASE)
-release : clean all
 
 all : $(OBJS)
 	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS) $(LDLIBS)
@@ -44,5 +44,5 @@ all : $(OBJS)
 .PHONY : clean
 clean :
 	-rm $(OBJS) $(PROG)
-	-rm *?~
+	-rm *~
 
