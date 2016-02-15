@@ -54,7 +54,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name);
 void parse_t_record(const unsigned char *rec, struct table_desc *tbl, const char *table_name);
 void parse_c_record(const unsigned char *rec, struct column_desc *col_desc);
 void parse_d_record(const unsigned char *record, const struct column_desc *col_desc_head);
-void t_record_to_sql(int fd, const struct table *tbl, const struct column_desc *col_head);
-void d_record_to_sql(int fd, const unsigned char *d_rec_buff, const struct table *tbl, const struct column_desc *col_head);
+void table_desc_to_sql(int fd, const struct table_desc *tbl);
+void d_record_to_sql(int fd, const unsigned char *rec, const struct table *tbl);
 
 #endif

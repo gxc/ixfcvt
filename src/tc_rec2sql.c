@@ -33,8 +33,7 @@ static int max_pk_idx(const struct column_desc *col_head);
  * the table struct and the coloumn descriptor list,
  * then writes it to the file specified by `fd'.
  */
-void table_desc_to_sql(int fd, const struct table *tbl,
-		       const struct column_desc *col_head)
+void table_desc_to_sql(int fd, const struct table_desc *tbl)
 {
 	char *buff;
 	ssize_t size;
@@ -43,9 +42,9 @@ void table_desc_to_sql(int fd, const struct table *tbl,
 
 	size = DEF_BUFF_SIZE;
 	buff = alloc_buff(size);
-	stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->dat_name);
-	col = col_head->next;
-	while (col) {
+	stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->t_name);
+	col = tbl->c_head;
+	while (col->next != tbl->c_head) {
 		stored += define_column(buff + stored, col);
 		col = col->next;
 		if (stored + MIN_AVAIL_SIZE > size) {
@@ -54,12 +53,13 @@ void table_desc_to_sql(int fd, const struct table *tbl,
 		}
 	}
 
-	stored += define_primary_key(buff + stored, col_head);
+	stored += define_primary_key(buff + stored, tbl->c_head);
 	strcpy(buff + stored, "\n);\n");
 
 	write_file(fd, buff);
 }
 
+/* TO-DO: pk_name if defined */
 /* Writes the primary key list if any, returns the bytes written. */
 static int define_primary_key(char *buff, const struct column_desc *col_head)
 {
@@ -95,7 +95,7 @@ static int max_pk_idx(const struct column_desc *col_head)
 	int max;
 
 	max = 0;
-	col = col_head->next;
+	col = col_head;
 	while (col) {
 		max = col->pk_index > max ? col->pk_index : max;
 		col = col->next;
@@ -113,33 +113,33 @@ static int define_column(char *buff, const struct column_desc *col)
 	int cnt;
 
 	cnt = 0;
-	switch (col->type) {
+	switch (col->c_type) {
 	case CHAR:
-		cnt = sprintf(buff, "\t%s CHAR(%zd)", col->name, col->length);
+		cnt = sprintf(buff, "\t%s CHAR(%zd)", col->c_name, col->c_len);
 		break;
 	case VARCHAR:
 		cnt =
-		    sprintf(buff, "\t%s VARCHAR(%zd)", col->name, col->length);
+		    sprintf(buff, "\t%s VARCHAR(%zd)", col->c_name, col->c_len);
 		break;
 	case SMALLINT:
-		cnt = sprintf(buff, "\t%s SMALLINT", col->name);
+		cnt = sprintf(buff, "\t%s SMALLINT", col->c_name);
 		break;
 	case INTEGER:
-		cnt = sprintf(buff, "\t%s INTEGER", col->name);
+		cnt = sprintf(buff, "\t%s INTEGER", col->c_name);
 		break;
 	case DECIMAL:
-		cnt = sprintf(buff, "\t%s DECIMAL(%lu, %lu)", col->name,
-			      col->length / 100U, col->length % 100U);
+		cnt = sprintf(buff, "\t%s DECIMAL(%lu, %lu)", col->c_name,
+			      col->c_len / 100U, col->c_len % 100U);
 		break;
 	case TIMESTAMP:
-		cnt = sprintf(buff, "\t%s TIMESTAMP", col->name);
+		cnt = sprintf(buff, "\t%s TIMESTAMP", col->c_name);
 		break;
 	default:
-		err_exit("DataType %d not implemented", col->type);
+		err_exit("DataType %d not implemented", col->c_type);
 
 	}
 
-	if (!col->nullable) {
+	if (!col->c_nullable) {
 		strcpy(buff + cnt, " NOT NULL");
 		cnt += strlen(" NOT NULL");
 	}

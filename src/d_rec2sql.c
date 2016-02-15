@@ -32,10 +32,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
 /* convert D records of a row to a INSERT statement */
-void data_record_to_sql(int fd,
-			const unsigned char *d_rec_buff,
-			const struct table *tbl,
-			const struct column_desc *col_head)
+void d_record_to_sql(int fd, const unsigned char *rec, const struct table *tbl)
 {
 	static char buff[D_REC_BUFF_SIZE];
 	static char *pos = buff;
@@ -60,21 +57,21 @@ void data_record_to_sql(int fd,
  * written byte. To be precise, it writes
  * "INSERT INTO table_name (column1, column2, ...) VALUES ".
  */
-static char *fill_in_arguments(char *buff, const char *table_name,
-			       const struct column_desc *col_head)
+static char *fill_in_arguments(char *buff, const struct table_desc *tbl)
 {
 	const struct column_desc *col;
 
-	buff += sprintf(buff, "INSERT INTO %s (", table_name);
+	buff += sprintf(buff, "INSERT INTO %s (", tbl->t_name);
 
-	col = col_head->next;
-	while (col) {
-		strcpy(buff, col->name);
-		buff += strlen(col->name);
-		if (col->next)
-			*buff++ = ',';
+	col = tbl->c_head;
+	do {
+		strcpy(buff, col->c_name);
+		buff += strlen(col->c_name);
+		*buff++ = ',';
 		col = col->next;
-	}
+	} while (col != tbl->c_head);
+
+	buff--; /* eat last comma */
 	strcpy(buff, ") VALUES ");
 	buff += strlen(") VALUES ");
 
@@ -96,8 +93,7 @@ static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 
 	col = *pcol;
 	do {
-		/* head of the struct means a new row */
-		if (col->name == NULL) {
+		if (col == tbl->c_head) {
 			col = col->next;
 			*buff++ = '(';
 		} else {
@@ -107,7 +103,7 @@ static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
 		walker = d_rec_buff + IXFDCOLS_OFFSET + col->offset;
 		buff = fill_in_a_value(buff, walker, col);
 		col = col->next;
-	} while (col && col->offset);
+	} while (col && col->c_offset);
 
 	/* If col points to NULL, all values in a
 	   row processed. Or if col->offset is 0,
@@ -131,7 +127,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 	unsigned cur_len;
 	long num_val;
 
-	if (col->nullable) {
+	if (col->c_nullable) {
 		if (column_is_null(src)) {
 			strcpy(buff, "null");
 			buff += strlen("null");
@@ -142,7 +138,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 		}
 	}
 
-	switch (col->type) {
+	switch (col->c_type) {
 	case CHAR:
 		buff = write_as_sql_str(buff, src, col->length);
 		break;
@@ -152,21 +148,21 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 		buff = write_as_sql_str(buff, src, cur_len);
 		break;
 	case SMALLINT:
-		num_val = parse_ixf_integer(src, col->length);
+		num_val = parse_ixf_integer(src, col->c_len);
 		buff += sprintf(buff, "%hd", (short)num_val);
 		break;
 	case INTEGER:
-		num_val = parse_ixf_integer(src, col->length);
+		num_val = parse_ixf_integer(src, col->c_len);
 		buff += sprintf(buff, "%ld", num_val);
 		break;
 	case DECIMAL:
-		buff = decode_packed_decimal(buff, src, col->length);
+		buff = decode_packed_decimal(buff, src, col->c_len);
 		break;
 	case TIMESTAMP:
-		buff = write_as_sql_str(buff, src, col->length);
+		buff = write_as_sql_str(buff, src, col->c_len);
 		break;
 	default:
-		err_exit("DB2 data type %d not implenmented", col->type);
+		err_exit("DB2 data type %d not implenmented", col->c_type);
 	}
 
 	return buff;
