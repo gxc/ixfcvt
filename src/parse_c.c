@@ -33,66 +33,68 @@
 #define IXFCNULL_OFFSET 260
 #define COL_ATTR_BUFF_SIZE 7	/* max of IXFCxxxx_BYTES + 1 */
 
-static void tweak_col_length(struct column_desc *col_desc);
-static int get_pk_index(const char *buff);
+static void tweak_col_length(struct column_desc *col);
+static int get_pk_pos(const char *pkpos);
 
 /* parse a C record, store the info in a column_desc struct */
-void parse_column_desc_record(const unsigned char *c_rec_buff,
-			      struct column_desc *col_desc)
+void parse_c_record(const unsigned char *rec, struct column_desc *col)
 {
 /* ignore IXFCDEFL, IXFCDEFV and IXFCKPOS now */
-	static char buff[COL_ATTR_BUFF_SIZE];
-	int col_name_len;
+	char buff[COL_ATTR_BUFF_SIZE];
+	int c_name_len;
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
-	memcpy(buff, c_rec_buff + IXFCNAML_OFFSET, IXFCNAML_BYTES);
-	col_name_len = str_to_long(buff);
-	col_desc->name = alloc_buff(col_name_len + 1);
-	memcpy(col_desc->name, c_rec_buff + IXFCNAME_OFFSET, col_name_len);
-	col_desc->name[col_name_len] = '\0';
+	memcpy(buff, rec + IXFCNAML_OFFSET, IXFCNAML_BYTES);
+	c_name_len = str_to_long(buff);
+	col->c_name = alloc_buff(c_name_len + 1);
+	memcpy(col->c_name, rec + IXFCNAME_OFFSET, c_name_len);
+	col->c_name[c_name_len] = '\0';
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
-	memcpy(buff, c_rec_buff + IXFCKPOS_OFFSET, IXFCKPOS_BYTES);
-	col_desc->pk_index = get_pk_index(buff);
+	memcpy(buff, rec + IXFCKPOS_OFFSET, IXFCKPOS_BYTES);
+	col->c_pkpos = get_pk_pos(buff);
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
-	memcpy(buff, c_rec_buff + IXFCTYPE_OFFSET, IXFCTYPE_BYTES);
-	col_desc->type = str_to_long(buff);
-	memcpy(buff, c_rec_buff + IXFCLENG_OFFSET, IXFCLENG_BYTES);
-	col_desc->length = str_to_long(buff);
-	tweak_col_length(col_desc);
+	memcpy(buff, rec + IXFCTYPE_OFFSET, IXFCTYPE_BYTES);
+	col->c_type = str_to_long(buff);
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
-	memcpy(buff, c_rec_buff + IXFCPOSN_OFFSET, IXFCPOSN_BYTES);
+	memcpy(buff, rec + IXFCLENG_OFFSET, IXFCLENG_BYTES);
+	col->c_len = str_to_long(buff);
+	tweak_col_length(col);
+
+	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
+	memcpy(buff, rec + IXFCPOSN_OFFSET, IXFCPOSN_BYTES);
 	/* the IXFDCOLS field of the D record starts at 1 (not 0) */
-	col_desc->offset = str_to_long(buff) - 1;
-	col_desc->nullable = c_rec_buff[IXFCNULL_OFFSET] == 'Y';
+	col->c_offset = str_to_long(buff) - 1;
+
+	col->c_nullable = rec[IXFCNULL_OFFSET] == 'Y';
 }
 
 /*
  * Returns the position of the column as part of the primary key,
  * or 0 if the column is not part of the key.
  */
-static int get_pk_index(const char *buff)
+static int get_pk_pos(const char *pkpos)
 {
 	if (*buff == 'N')
 		return 0;
-	return str_to_long(buff);
+	return str_to_long(pkpos);
 }
 
-/* tweak column_desc.length */
-static void tweak_col_length(struct column_desc *col_desc)
+/* tweak column_desc.c_len */
+static void tweak_col_length(struct column_desc *col)
 {
-	switch (col_desc->type) {
+	switch (col->c_type) {
 	case SMALLINT:
-		col_desc->length = 2U;
+		col->c_len = 2U;
 		break;
 	case INTEGER:
-		col_desc->length = 4U;
+		col->c_len = 4U;
 		break;
 	case TIMESTAMP:
 		/* 20 is the number of characters before point */
-		col_desc->length += 20U;
+		col->c_len += 20U;
 		break;
 	default:
 		break;
