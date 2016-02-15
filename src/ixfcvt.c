@@ -25,9 +25,9 @@
 
 static ssize_t get_record_len(const int fd);
 static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size);
-static struct column_desc *append_col_node(struct column_desc *rear);
-static void free_col_desc(struct column_desc *head);
-static void free_tbl(struct table *tbl);
+static void append_column(struct column_desc *col, struct column_desc *head);
+static void free_table(struct table_desc *tbl);
+static void free_columns(struct column_desc *head);
 
 /*
  * perform the conversion process
@@ -42,18 +42,14 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 	unsigned char *buff;
 	ssize_t buff_size;
 	ssize_t rec_len;
-	struct table *tbl;
-	struct column_desc *col_head;
-	struct column_desc *col_node;
+	struct table_desc *tbl;
+	struct column_desc *col;
 
 	buff = alloc_buff(DEF_BUFF_SIZE);
 	buff_size = DEF_BUFF_SIZE;
 
-	tbl = alloc_buff(sizeof(struct table));
-	col_head = alloc_buff(sizeof(struct column_desc));
-	/* only name of head can be NULL */
-	col_head->name = NULL;
-	col_node = col_head;
+	tbl = alloc_buff(sizeof(struct table_desc));
+	tbl->c_head = NULL;
 
 	while ((rec_len = get_record_len(ifd)) > 0) {
 		if (rec_len > buff_size)
@@ -66,15 +62,16 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 		case 'H':
 			break;
 		case 'T':
-			parse_table_record(buff, tbl, table_name);
+			parse_t_record(buff, tbl, table_name);
 			break;
 		case 'C':
-			col_node = append_col_node(col_node);
-			parse_column_desc_record(buff, col_node);
+			col = alloc_buff(sizeof(struct column_desc));
+			parse_c_record(buff, col);
+			append_column(col, tbl->c_head);
 			break;
 		case 'D':
 			/* produce INSERT statement according to D record */
-			data_record_to_sql(ofd, buff, tbl, col_head);
+			d_record_to_sql(ofd, buff, tbl, col_head);
 			break;
 		case 'A':
 			break;
@@ -87,10 +84,9 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 		err_exit(IXF_BAD_FORMAT);
 
 	/* output CREATE TABLE statement */
-	table_desc_to_sql(cfd, tbl, col_head);
+	t_desc_to_sql(cfd, tbl);
 
-	free_col_desc(col_head);
-	free_tbl(tbl);
+	free_table(tbl);
 }
 
 /* Fills the buffer with a record, returns true on success, false on error. */
@@ -114,35 +110,42 @@ static ssize_t get_record_len(const int fd)
 		return num_read;
 }
 
-/* Allocates a new column_desc struct and appends it to `rear' */
-static struct column_desc *append_col_node(struct column_desc *rear)
+/* append a column description structure to the circular-linked list */
+static void append_column(struct column_desc *col, struct column_desc *head)
 {
 	struct column_desc *node;
 
-	node = alloc_buff(sizeof(struct column_desc));
-	rear->next = node;
-	node->next = NULL;
-
-	return node;
+	if (head) {
+		node = head;
+		while (node->next != head)
+			node = node->next;
+		node->next = col;
+	} else {
+		head = col;
+	}
+	col->next = head;
 }
 
-/* free the T record */
-static void free_tbl(struct table *tbl)
+/* free truct table_desc */
+static void free_table(struct table_desc *tbl)
 {
-	free_buff(tbl->dat_name);
-	free_buff(tbl->pk_name);
+	free_buff(tbl->t_name);
+	free_buff(tbl->t_pkname);
+	free_columns(tbl->c_head);
 	free_buff(tbl);
 }
 
-/* free C records */
-static void free_col_desc(struct column_desc *head)
+/* free list of column descriptions */
+static void free_columns(struct column_desc *head)
 {
 	struct column_desc *node;
-	while (head->next) {
+
+	while (head->next != head) {
 		node = head->next;
 		head->next = node->next;
-		free_buff(node->name);
+		free_buff(node->c_name);
 		free_buff(node);
 	}
+	free_buff(head->c_name);
 	free_buff(head);
 }

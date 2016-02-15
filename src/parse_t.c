@@ -31,40 +31,40 @@
 static void strip_ext(char *name, const char *ext);
 
 /* parse a T record, store the info in a table struct */
-void parse_table_record(const unsigned char *t_rec_buff, struct table *tbl,
-			const char *table_name)
+void parse_t_record(const unsigned char *rec, struct table *tbl, const char *table_name)
 {
-	static char buff[TBL_ATTR_BUFF_SIZE];
-	const unsigned char *walker;
-	int dat_name_len;
+	char buff[TBL_ATTR_BUFF_SIZE];
+	int t_name_len;
 	int pk_name_len;
+	unsigned char *walker;
 
-	if (!table_name) {
-		memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
-		memcpy(buff, t_rec_buff + IXFTNAML_OFFSET, IXFTNAML_BYTES);
-		dat_name_len = str_to_long(buff);
-		tbl->dat_name = alloc_buff(dat_name_len + 1);
-		memcpy(tbl->dat_name, t_rec_buff + IXFTNAME_OFFSET,
-		       dat_name_len);
-		tbl->dat_name[dat_name_len] = '\0';
-		strip_ext(tbl->dat_name, ".ixf");
-	} else {
-		tbl->dat_name = strdup(table_name);
-		if (!tbl->dat_name)
+	if (table_name) {
+		tbl->t_name = strdup(table_name);
+		if (!tbl->t_name)
 			err_exit("virtual memory exhausted");
+	} else {
+		memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
+		memcpy(buff, rec + IXFTNAML_OFFSET, IXFTNAML_BYTES);
+		t_name_len = str_to_long(buff);
+		tbl->t_name = alloc_buff(t_name_len + 1);
+		memcpy(tbl->t_name, rec + IXFTNAME_OFFSET, t_name_len);
+		tbl->t_name[t_name_len] = '\0';
+		strip_ext(tbl->t_name, ".ixf");
 	}
 
-	memcpy(buff, t_rec_buff + IXFTCCNT_OFFSET, IXFTCCNT_BYTES);
-	tbl->col_num = str_to_long(buff);
+	memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
+	memcpy(buff, rec + IXFTCCNT_OFFSET, IXFTCCNT_BYTES);
+	tbl->t_ncols = str_to_long(buff);
 
-	pk_name_len = 1;	/* 1 for '\0' */
-	for (walker = t_rec_buff + IXFTPKNM_OFFSET; *walker; walker++)
+	pk_name_len = 0;
+	for (walker = rec + IXFTPKNM_OFFSET; *walker; walker++)
 		pk_name_len++;
-	tbl->pk_name = alloc_buff(pk_name_len);
-	memcpy(tbl->pk_name, t_rec_buff + IXFTPKNM_OFFSET, pk_name_len);
+	tbl->pk_name = alloc_buff(pk_name_len + 1);
+	memcpy(tbl->pk_name, rec + IXFTPKNM_OFFSET, pk_name_len);
+	tbl->pk_name[pk_name_len] = '\0';
 }
 
-/* This function strips the trailing `.ixf' of `tbl->dat_name' */
+/* This function strips the trailing `.ixf' of `tbl->t_name' */
 static void strip_ext(char *name, const char *ext)
 {
 	char *ext_loc;
