@@ -71,7 +71,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 			break;
 		case 'D':
 			/* produce INSERT statement according to D record */
-			d_record_to_sql(ofd, buff, tbl, col_head);
+			d_record_to_sql(ofd, buff, tbl);
 			break;
 		case 'A':
 			break;
@@ -84,7 +84,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 		err_exit(IXF_BAD_FORMAT);
 
 	/* output CREATE TABLE statement */
-	t_desc_to_sql(cfd, tbl);
+	table_desc_to_sql(cfd, tbl);
 
 	free_table(tbl);
 }
