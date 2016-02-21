@@ -77,7 +77,7 @@ void parse_c_record(const unsigned char *rec, struct column_desc *col)
  */
 static int get_pk_pos(const char *pkpos)
 {
-	if (*buff == 'N')
+	if (*pkpos == 'N')
 		return 0;
 	return str_to_long(pkpos);
 }

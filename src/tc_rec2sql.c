@@ -30,30 +30,27 @@ static int max_pk_pos(const struct column_desc *col_head);
 
 /*
  * This function generates a CREATE TABLE statement from
- * the table struct and the coloumn descriptor list,
- * then writes it to the file specified by `fd'.
+ * `tbl' and writes it to the file specified by `fd'.
  */
 void table_desc_to_sql(int fd, const struct table_desc *tbl)
 {
 	char *buff;
 	size_t size;
-	int stored;
+	size_t stored;
 	const struct column_desc *col;
 
 	size = DEF_BUFF_SIZE;
 	buff = alloc_buff(size);
 	stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->t_name);
-	col = tbl->c_head;
-	do {
-		stored += define_column(buff + stored, col);
-		col = col->next;
+	for (col = tbl->c_head; col; col = col->next) {
 		if (stored + MIN_AVAIL_SIZE > size) {
 			size += INCREMENT_SIZE;
 			buff = resize_buff(buff, size);
 		}
-	} while (col != tbl->c_head);
+		stored += sprint_column(buff + stored, col);
+	}
 
-	stored += define_primary_key(buff + stored, tbl->c_head);
+	stored += sprint_primary_key(buff + stored, tbl->c_head);
 	strcpy(buff + stored, "\n);\n");
 
 	write_file(fd, buff);
@@ -61,7 +58,7 @@ void table_desc_to_sql(int fd, const struct table_desc *tbl)
 }
 
 /* TO-DO: pk_name if defined */
-/* Writes the primary key list if any, returns the bytes written. */
+/* Writes the primary key list to `buff', returns the bytes written. */
 static int sprint_primary_key(char *buff, const struct column_desc *col_head)
 {
 	const struct column_desc *col;
@@ -77,9 +74,9 @@ static int sprint_primary_key(char *buff, const struct column_desc *col_head)
 	cnt = strlen(",\n\tPRIMARY KEY (");
 
 	for (i = 1; i <= pk_max; ++i) {
-		col = col_head;
-		while (col->c_pkpos != i)
-			col = col->next;
+		for (col = col_head; col; col = col->next)
+			if (col->c_pkpos == i)
+				break;
 		if (i < pk_max)
 			cnt += sprintf(buff + cnt, "%s, ", col->c_name);
 		else
@@ -96,18 +93,15 @@ static int max_pk_pos(const struct column_desc *col_head)
 	int max;
 
 	max = 0;
-	col = col_head;
-	do {
+	for (col = col_head; col; col = col->next)
 		if (col->c_pkpos > max)
 			max = col->c_pkpos;
-		col = col->next;
-	} while (col != col_head);
 
 	return max;
 }
 
 /*
- * This function interprets what a column descriptor struct defines,
+ * This function interprets and writes the definition of `col',
  * returns the number of characters populated into the buffer.
  */
 static int sprint_column(char *buff, const struct column_desc *col)

@@ -30,7 +30,7 @@ enum DB2_DATA_TYPE {
 };
 
 /* TO-DO: IXFCDEFL, IXFCDEFV */
-/* circular-linked list of column definition */
+/* singly linked list of column definition */
 struct column_desc {
 	char *c_name;		/* column name */
 	int c_type;		/* data type */
@@ -51,10 +51,13 @@ struct table_desc {
 };
 
 void parse_and_output(int ifd, int ofd, int cfd, const char *table_name);
-void parse_t_record(const unsigned char *rec, struct table_desc *tbl, const char *table_name);
-void parse_c_record(const unsigned char *rec, struct column_desc *col_desc);
-void parse_d_record(const unsigned char *record, const struct column_desc *col_desc_head);
+void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
+		    const char *table_name);
+void parse_c_record(const unsigned char *rec, struct column_desc *col);
+void parse_d_record(const unsigned char *record,
+		    const struct column_desc *col_head);
 void table_desc_to_sql(int fd, const struct table_desc *tbl);
-void d_record_to_sql(int fd, const unsigned char *rec, const struct table *tbl);
+void d_record_to_sql(int fd, const unsigned char *rec,
+		     const struct table_desc *tbl);
 
 #endif

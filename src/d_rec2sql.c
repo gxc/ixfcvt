@@ -23,32 +23,32 @@
 
 #define D_REC_BUFF_SIZE 32780
 
-static char *fill_in_arguments(char *buff, const char *table_name,
-			       const struct column_desc *col_head);
-static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
-			    struct column_desc **pcol);
+static char *fill_in_arguments(char *buff, const struct table_desc *tbl);
+static char *fill_in_values(char *buff, const unsigned char *rec,
+			    const struct table_desc *tbl,
+			    struct column_desc **colptr);
 static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col);
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
 /* convert D records of a row to a INSERT statement */
-void d_record_to_sql(int fd, const unsigned char *rec, const struct table *tbl)
+void d_record_to_sql(int fd, const unsigned char *rec,
+		     const struct table_desc *tbl)
 {
 	static char buff[D_REC_BUFF_SIZE];
-	static char *pos = buff;
-	static struct column_desc *next_col = NULL;
+	static struct column_desc *col = NULL;
 
-	/* next_col == col_head means a new row */
-	if (!next_col)
-		next_col = (struct column_desc *)col_head;
-	if (next_col == col_head)
-		pos = fill_in_arguments(buff, tbl->dat_name, col_head);
-	pos = fill_in_values(pos, d_rec_buff, &next_col);
-	if (!next_col) {
-		next_col = (struct column_desc *)col_head;
-		pos = buff;
+	if (!col)
+		col = tbl->c_head;
+
+	memset(buff, 0x00, D_REC_BUFF_SIZE);
+	if (col == tbl->c_head) {
+		fill_in_arguments(buff, tbl);
 		write_file(fd, buff);
+		memset(buff, 0x00, D_REC_BUFF_SIZE);
 	}
+	fill_in_values(buff, rec, tbl, &col);
+	write_file(fd, buff);
 }
 
 /*
@@ -63,15 +63,13 @@ static char *fill_in_arguments(char *buff, const struct table_desc *tbl)
 
 	buff += sprintf(buff, "INSERT INTO %s (", tbl->t_name);
 
-	col = tbl->c_head;
-	do {
+	for (col = tbl->c_head; col; col = col->next) {
 		strcpy(buff, col->c_name);
 		buff += strlen(col->c_name);
 		*buff++ = ',';
-		col = col->next;
-	} while (col != tbl->c_head);
+	}
 
-	buff--; /* eat last comma */
+	--buff;			/* eat last comma */
 	strcpy(buff, ") VALUES ");
 	buff += strlen(") VALUES ");
 
@@ -81,34 +79,30 @@ static char *fill_in_arguments(char *buff, const struct table_desc *tbl)
 /*
  * Converts a D record to a string of row values, i.e.
  * "(val1,val2,...);\n" or a part of them, and saves it into `buff'.
- * If a row consists of mutiple D records, `*pcol' returns the
+ * If a row consists of mutiple D records, `*colptr' returns the
  * column corresponding to the beginning of the next D record,
  * or NULL to indicate the end of a row.
  */
-static char *fill_in_values(char *buff, const unsigned char *d_rec_buff,
-			    struct column_desc **pcol)
+static char *fill_in_values(char *buff, const unsigned char *rec,
+			    const struct table_desc *tbl,
+			    struct column_desc **colptr)
 {
 	const unsigned char *walker;
 	struct column_desc *col;
 
-	col = *pcol;
+	col = *colptr;
 	do {
-		if (col == tbl->c_head) {
-			col = col->next;
+		if (col == tbl->c_head)
 			*buff++ = '(';
-		} else {
+		else
 			*buff++ = ',';
-		}
 
-		walker = d_rec_buff + IXFDCOLS_OFFSET + col->offset;
+		walker = rec + IXFDCOLS_OFFSET + col->c_offset;
 		buff = fill_in_a_value(buff, walker, col);
 		col = col->next;
-	} while (col && col->c_offset);
+	} while (col && col->c_offset);	/* no offset means next record */
 
-	/* If col points to NULL, all values in a
-	   row processed. Or if col->offset is 0,
-	   values are stored in the next D record */
-	*pcol = col;
+	*colptr = col;
 	if (!col) {
 		strcpy(buff, ");\n");
 		buff += strlen(");\n");
@@ -140,7 +134,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 
 	switch (col->c_type) {
 	case CHAR:
-		buff = write_as_sql_str(buff, src, col->length);
+		buff = write_as_sql_str(buff, src, col->c_len);
 		break;
 	case VARCHAR:
 		cur_len = get_varchar_cur_len(src);

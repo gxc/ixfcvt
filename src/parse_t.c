@@ -31,12 +31,13 @@
 static void strip_ext(char *name, const char *ext);
 
 /* parse a T record, store the info in a table struct */
-void parse_t_record(const unsigned char *rec, struct table *tbl, const char *table_name)
+void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
+		    const char *table_name)
 {
 	char buff[TBL_ATTR_BUFF_SIZE];
 	int t_name_len;
-	int pk_name_len;
-	unsigned char *walker;
+	int t_pkname_len;
+	const unsigned char *walker;
 
 	if (table_name) {
 		tbl->t_name = strdup(table_name);
@@ -56,12 +57,12 @@ void parse_t_record(const unsigned char *rec, struct table *tbl, const char *tab
 	memcpy(buff, rec + IXFTCCNT_OFFSET, IXFTCCNT_BYTES);
 	tbl->t_ncols = str_to_long(buff);
 
-	pk_name_len = 0;
+	t_pkname_len = 0;
 	for (walker = rec + IXFTPKNM_OFFSET; *walker; walker++)
-		pk_name_len++;
-	tbl->pk_name = alloc_buff(pk_name_len + 1);
-	memcpy(tbl->pk_name, rec + IXFTPKNM_OFFSET, pk_name_len);
-	tbl->pk_name[pk_name_len] = '\0';
+		t_pkname_len++;
+	tbl->t_pkname = alloc_buff(t_pkname_len + 1);
+	memcpy(tbl->t_pkname, rec + IXFTPKNM_OFFSET, t_pkname_len);
+	tbl->t_pkname[t_pkname_len] = '\0';
 }
 
 /* This function strips the trailing `.ixf' of `tbl->t_name' */

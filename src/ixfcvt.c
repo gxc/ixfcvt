@@ -24,8 +24,8 @@
 #define IXF_BAD_FORMAT "Not a valid IXF file"
 
 static ssize_t get_record_len(const int fd);
-static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size);
-static void append_column(struct column_desc *col, struct column_desc *head);
+static _Bool get_record(const int fd, unsigned char *rec, ssize_t rec_size);
+static void append_column(struct column_desc *col, struct table_desc *tbl);
 static void free_table(struct table_desc *tbl);
 static void free_columns(struct column_desc *head);
 
@@ -39,13 +39,13 @@ static void free_columns(struct column_desc *head);
  */
 void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 {
-	unsigned char *buff;
+	unsigned char *rec;
 	ssize_t buff_size;
 	ssize_t rec_len;
 	struct table_desc *tbl;
 	struct column_desc *col;
 
-	buff = alloc_buff(DEF_BUFF_SIZE);
+	rec = alloc_buff(DEF_BUFF_SIZE);
 	buff_size = DEF_BUFF_SIZE;
 
 	tbl = alloc_buff(sizeof(struct table_desc));
@@ -53,25 +53,25 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 
 	while ((rec_len = get_record_len(ifd)) > 0) {
 		if (rec_len > buff_size)
-			buff = resize_buff(buff, rec_len);
+			rec = resize_buff(rec, rec_len);
 
-		if (!get_record(ifd, buff, rec_len))
+		if (!get_record(ifd, rec, rec_len))
 			err_exit(IXF_BAD_FORMAT);
 
-		switch (*buff) {
+		switch (*rec) {
 		case 'H':
 			break;
 		case 'T':
-			parse_t_record(buff, tbl, table_name);
+			parse_t_record(rec, tbl, table_name);
 			break;
 		case 'C':
 			col = alloc_buff(sizeof(struct column_desc));
-			parse_c_record(buff, col);
-			append_column(col, tbl->c_head);
+			parse_c_record(rec, col);
+			append_column(col, tbl);
 			break;
 		case 'D':
 			/* produce INSERT statement according to D record */
-			d_record_to_sql(ofd, buff, tbl);
+			d_record_to_sql(ofd, rec, tbl);
 			break;
 		case 'A':
 			break;
@@ -110,20 +110,20 @@ static ssize_t get_record_len(const int fd)
 		return num_read;
 }
 
-/* append a column description structure to the circular-linked list */
-static void append_column(struct column_desc *col, struct column_desc *head)
+/* append a column description structure to the singly-linked list */
+static void append_column(struct column_desc *col, struct table_desc *tbl)
 {
 	struct column_desc *node;
 
-	if (head) {
-		node = head;
-		while (node->next != head)
+	if (tbl->c_head) {
+		node = tbl->c_head;
+		while (node->next)
 			node = node->next;
 		node->next = col;
 	} else {
-		head = col;
+		tbl->c_head = col;
 	}
-	col->next = head;
+	col->next = NULL;
 }
 
 /* free truct table_desc */
@@ -140,7 +140,7 @@ static void free_columns(struct column_desc *head)
 {
 	struct column_desc *node;
 
-	while (head->next != head) {
+	while (head->next) {
 		node = head->next;
 		head->next = node->next;
 		free_buff(node->c_name);
