@@ -28,6 +28,7 @@ void *resize_buff(void *buff, size_t new_size);
 void free_buff(void *buff);
 int open_file(const char *file, int oflags, mode_t mode);
 void close_file(int fd);
+off_t seek_file(int fd, off_t offset, int whence);
 void write_file(int fd, const char *buff);
 _Bool lock_entire_file(int fd, short lock_type);
 _Bool prompt_y_or_n(void);

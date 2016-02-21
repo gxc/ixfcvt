@@ -152,6 +152,18 @@ void close_file(int fd)
 		err_exit(strerror(errno));
 }
 
+/* wrapper function for lseek; exit on error */
+off_t seek_file(int fd, off_t offset, int whence)
+{
+	off_t ret;
+
+	ret = lseek(fd, offset, whence);
+	if (ret == -1)
+		err_exit(strerror(errno));
+
+	return ret;
+}
+
 /* write a null terminated buffer to a file */
 void write_file(int fd, const char *buff)
 {

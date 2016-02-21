@@ -20,10 +20,10 @@
 #include "util.h"
 
 #define REC_LEN_BYTES 6
-#define DEF_BUFF_SIZE 4096
 #define IXF_BAD_FORMAT "Not a valid IXF file"
 
 static ssize_t get_record_len(const int fd);
+static ssize_t max_record_size(const int fd);
 static _Bool get_record(const int fd, unsigned char *rec, ssize_t rec_size);
 static void append_column(struct column_desc *col, struct table_desc *tbl);
 static void free_table(struct table_desc *tbl);
@@ -45,16 +45,13 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 	struct table_desc *tbl;
 	struct column_desc *col;
 
-	rec = alloc_buff(DEF_BUFF_SIZE);
-	buff_size = DEF_BUFF_SIZE;
+	buff_size = max_record_size(ifd);
+	rec = alloc_buff(buff_size);
 
 	tbl = alloc_buff(sizeof(struct table_desc));
 	tbl->c_head = NULL;
 
 	while ((rec_len = get_record_len(ifd)) > 0) {
-		if (rec_len > buff_size)
-			rec = resize_buff(rec, rec_len);
-
 		if (!get_record(ifd, rec, rec_len))
 			err_exit(IXF_BAD_FORMAT);
 
@@ -108,6 +105,28 @@ static ssize_t get_record_len(const int fd)
 		return str_to_long(buff);
 	else
 		return num_read;
+}
+
+/* Returns the max size of records in an IXF file specified by `fd' */
+static ssize_t max_record_size(const int fd)
+{
+	off_t orig;
+	ssize_t max;
+	ssize_t len;
+
+	orig = seek_file(fd, 0, SEEK_CUR);
+
+	max = 0;
+	seek_file(fd, 0, SEEK_SET);
+	while ((len = get_record_len(fd)) > 0) {
+		if (len > max)
+			max = len;
+		seek_file(fd, len, SEEK_CUR);
+	}
+
+	seek_file(fd, orig, SEEK_SET);
+
+	return max;
 }
 
 /* append a column description structure to the singly-linked list */
