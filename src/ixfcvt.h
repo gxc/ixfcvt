@@ -29,36 +29,35 @@ enum DB2_DATA_TYPE {
 	TIMESTAMP = 392
 };
 
-/* column descriptor */
-/* TO-DO: IXFCDEFL, IXFCDEFV and IXFCKPOS */
+/* TO-DO: IXFCDEFL, IXFCDEFV */
+/* singly linked list of column definition */
 struct column_desc {
-	char *name;
-	int type;
-	size_t length;		/* when type is decimal, the first 3 digits is
-				   the precision and last 2 digits for scale */
-	long offset;		/* offset from the beginning of a D record */
-	_Bool nullable;
-	int pk_index;		/* order in pk list, 0 if not a part of it */
+	char *c_name;		/* column name */
+	int c_type;		/* data type */
+	size_t c_len;		/* data length */
+	/* If data type is decimal, the first 3 digits of `c_len'
+	   is the precision, the last 2 digits is the scale */
+	off_t c_offset;		/* offset from beginning of a D record */
+	_Bool c_nullable;	/* whether accepts null values */
+	int c_pkpos;		/* position in primary key */
 	struct column_desc *next;
 };
 
-struct table {
-	char *dat_name;		/* original IXF file name, without ext `.ixf' */
-	int col_num;		/* number of C records */
-	char *pk_name;		/* name of the primary key */
+struct table_desc {
+	char *t_name;		/* table name, data name as default */
+	char *t_pkname;		/* primary key name */
+	int t_ncols;		/* number of columns */
+	struct column_desc *c_head;	/* point to first column_desc */
 };
 
 void parse_and_output(int ifd, int ofd, int cfd, const char *table_name);
-void parse_table_record(const unsigned char *record, struct table *tbl,
-			const char *table_name);
-void parse_column_desc_record(const unsigned char *c_rec_buff,
-			      struct column_desc *col_desc);
-void parse_data_record(const unsigned char *record,
-		       const struct column_desc *col_desc_head);
-void table_desc_to_sql(int fd, const struct table *tbl,
-		       const struct column_desc *col_head);
-void data_record_to_sql(int fd, const unsigned char *d_rec_buff,
-			const struct table *tbl,
-			const struct column_desc *col_head);
+void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
+		    const char *table_name);
+void parse_c_record(const unsigned char *rec, struct column_desc *col);
+void parse_d_record(const unsigned char *record,
+		    const struct column_desc *col_head);
+void table_desc_to_sql(int fd, const struct table_desc *tbl);
+void d_record_to_sql(int fd, const unsigned char *rec,
+		     const struct table_desc *tbl);
 
 #endif
