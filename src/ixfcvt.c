@@ -20,11 +20,11 @@
 #include "util.h"
 
 #define REC_LEN_BYTES 6
-#define IXF_BAD_FORMAT "Not a valid IXF file"
+#define IXF_BAD_FORMAT "Invalid IXF file"
 
-static ssize_t get_record_len(const int fd);
-static ssize_t max_record_size(const int fd);
-static _Bool get_record(const int fd, unsigned char *rec, ssize_t rec_size);
+static ssize_t get_record_len(int fd);
+static ssize_t max_record_size(int fd);
+static _Bool get_record(int fd, unsigned char *rec, ssize_t rec_size);
 static void append_column(struct column_desc *col, struct table_desc *tbl);
 static void free_table(struct table_desc *tbl);
 static void free_columns(struct column_desc *head);
@@ -40,14 +40,11 @@ static void free_columns(struct column_desc *head);
 void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 {
 	unsigned char *rec;
-	ssize_t buff_size;
 	ssize_t rec_len;
 	struct table_desc *tbl;
 	struct column_desc *col;
 
-	buff_size = max_record_size(ifd);
-	rec = alloc_buff(buff_size);
-
+	rec = alloc_buff(max_record_size(ifd));
 	tbl = alloc_buff(sizeof(struct table_desc));
 	tbl->c_head = NULL;
 
@@ -87,7 +84,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 }
 
 /* Fills the buffer with a record, returns true on success, false on error. */
-static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size)
+static _Bool get_record(int fd, unsigned char *buff, ssize_t rec_size)
 {
 	if (read(fd, buff, rec_size) == rec_size)
 		return 1;
@@ -95,7 +92,7 @@ static _Bool get_record(const int fd, unsigned char *buff, ssize_t rec_size)
 }
 
 /* Returns the size of next record on success, -1 on error, 0 on EOF. */
-static ssize_t get_record_len(const int fd)
+static ssize_t get_record_len(int fd)
 {
 	static char buff[REC_LEN_BYTES + 1];
 	ssize_t num_read;
@@ -108,7 +105,7 @@ static ssize_t get_record_len(const int fd)
 }
 
 /* Returns the max size of records in an IXF file specified by `fd' */
-static ssize_t max_record_size(const int fd)
+static ssize_t max_record_size(int fd)
 {
 	off_t orig;
 	ssize_t max;
