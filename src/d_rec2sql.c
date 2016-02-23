@@ -21,43 +21,83 @@
 #include "parse_d.h"
 #include "util.h"
 
-#define D_REC_BUFF_SIZE 32780
-
-static char *fill_in_arguments(char *buff, const struct table_desc *tbl);
-static char *fill_in_values(char *buff, const unsigned char *rec,
-			    const struct table_desc *tbl,
+static size_t insert_into_clause_size(const struct table_desc *tbl);
+static void gen_insert_into_clause(char *buff, const struct table_desc *tbl);
+static size_t max_d_values_size(const struct table_desc *tbl);
+static size_t col_value_size(const struct column_desc *col);
+static void fill_in_values(char *buff, const unsigned char *rec,
+			    const struct column_desc *col_head,
 			    struct column_desc **colptr);
 static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col);
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
-/* convert D records of a row to a INSERT statement */
-void d_record_to_sql(int fd, const unsigned char *rec,
+
+static char *insert_into_clause;
+static char *values_buff;
+static size_t values_buff_size;
+
+/* allocate memory for buffers and build INSERT INTO clause */
+void init_d_buffers(const struct table_desc *tbl)
+{
+	size_t size;
+
+	size = insert_into_clause_size(tbl);
+	insert_into_clause = alloc_buff(size);
+	gen_insert_into_clause(insert_into_clause, tbl);
+
+	size = max_d_values_size(tbl);
+	values_buff = alloc_buff(size);
+	values_buff_size = size;
+}
+
+/* free buffers `insert_into_clause' and `values_buff' */
+void dispose_d_buffers(void)
+{
+	free_buff(insert_into_clause);
+	free_buff(values_buff);
+}
+
+/* convert a D record to (part of) an INSERT statement */
+void d_record_to_sql(int ofd, const unsigned char *rec,
 		     const struct table_desc *tbl)
 {
-	static char buff[D_REC_BUFF_SIZE];
 	static struct column_desc *col = NULL;
 
 	if (!col)
 		col = tbl->c_head;
 
-	memset(buff, 0x00, D_REC_BUFF_SIZE);
-	if (col == tbl->c_head) {
-		fill_in_arguments(buff, tbl);
-		write_file(fd, buff);
-		memset(buff, 0x00, D_REC_BUFF_SIZE);
-	}
-	fill_in_values(buff, rec, tbl, &col);
-	write_file(fd, buff);
+	if (col == tbl->c_head)
+		write_file(ofd, insert_into_clause);
+	memset(values_buff, 0x00, values_buff_size);
+	fill_in_values(values_buff, rec, tbl->c_head, &col);
+	write_file(ofd, values_buff);
+}
+
+/* calculate and return the required size of buffer `insert_into_clause' */
+static size_t insert_into_clause_size(const struct table_desc *tbl)
+{
+	const size_t COMMA_LEN = 1U;
+	const size_t NULL_TERM_LEN = 1U;
+	size_t size;
+	const struct column_desc *col;
+
+	size = strlen("INSERT INTO ");
+	size += strlen(tbl->t_name);
+	size += strlen(" (");
+	for (col = tbl->c_head; col; col = col->next)
+		size += strlen(col->c_name) + COMMA_LEN;
+	size += strlen(" VALUES ");
+	size += NULL_TERM_LEN;
+
+	return size;
 }
 
 /*
- * This function writes arguments of the INSERT statement into
- * the buffer, returns a pointer to the byte following the last
- * written byte. To be precise, it writes
+ * Build an INSERT INTO clause, fills it in `buff', that is,
  * "INSERT INTO table_name (column1, column2, ...) VALUES ".
  */
-static char *fill_in_arguments(char *buff, const struct table_desc *tbl)
+static void gen_insert_into_clause(char *buff, const struct table_desc *tbl)
 {
 	const struct column_desc *col;
 
@@ -69,56 +109,110 @@ static char *fill_in_arguments(char *buff, const struct table_desc *tbl)
 		*buff++ = ',';
 	}
 
-	--buff;			/* eat last comma */
-	strcpy(buff, ") VALUES ");
-	buff += strlen(") VALUES ");
+	/* eat last comma */
+	strcpy(--buff, ") VALUES ");
+}
 
-	return buff;
+/* calculate and return max size of a string representation of a D record */
+static size_t max_d_values_size(const struct table_desc *tbl)
+{
+	const size_t COMMA_LEN = 1U;
+	const size_t WRAPPER_LEN = 4U;
+	size_t max;
+	size_t size;
+	const struct column_desc *col;
+
+	max = 0;
+	size = 0;
+	for (col = tbl->c_head; col; col = col->next) {
+		size += col_value_size(col) + COMMA_LEN;
+		if (!col->next || !col->next->c_offset) {
+			max = size > max ? size : max;
+			size = 0;
+		}
+	}
+
+	return max + WRAPPER_LEN;
+}
+
+/* return size of the string representation of column pointed to by `col' */
+static size_t col_value_size(const struct column_desc *col)
+{
+	const size_t SIGN_LEN = 1U;
+	const size_t SINGLE_QUOTES_LEN = 2U;
+	char *const SMALLINT_MIN = "-32768";
+	char *const INTEGER_MIN = "-2147483648";
+
+	size_t size;
+
+	size = 0;
+	switch (col->c_type) {
+	case CHAR:
+		size = col->c_len + SINGLE_QUOTES_LEN;
+		break;
+	case VARCHAR:
+		size = col->c_len + SINGLE_QUOTES_LEN;
+		break;
+	case SMALLINT:
+		size = strlen(SMALLINT_MIN);
+		break;
+	case INTEGER:
+		size = strlen(INTEGER_MIN);
+		break;
+	case DECIMAL:
+		size = col->c_len / 100 + SIGN_LEN;
+		break;
+	case TIMESTAMP:
+		size = col->c_len + SINGLE_QUOTES_LEN;
+		break;
+	default:
+		err_exit("%d: Data type not implemented", col->c_type);
+	}
+
+	return size;
 }
 
 /*
  * Converts a D record to a string of row values, i.e.
- * "(val1,val2,...);\n" or a part of them, and saves it into `buff'.
+ * "(val1,val2,...);\n", or part of it, saves it into `buff', and
+ * returns a pointer to the byte following the last written byte.
  * If a row consists of mutiple D records, `*colptr' returns the
  * column corresponding to the beginning of the next D record,
  * or NULL to indicate the end of a row.
  */
-static char *fill_in_values(char *buff, const unsigned char *rec,
-			    const struct table_desc *tbl,
+static void fill_in_values(char *buff, const unsigned char *rec,
+			    const struct column_desc *col_head,
 			    struct column_desc **colptr)
 {
-	const unsigned char *walker;
+	const unsigned char *pos;
 	struct column_desc *col;
 
 	col = *colptr;
 	do {
-		if (col == tbl->c_head)
+		if (col == col_head)
 			*buff++ = '(';
 		else
 			*buff++ = ',';
 
-		walker = rec + IXFDCOLS_OFFSET + col->c_offset;
-		buff = fill_in_a_value(buff, walker, col);
+		pos = rec + IXFDCOLS_OFFSET + col->c_offset;
+		buff = fill_in_a_value(buff, pos, col);
 		col = col->next;
-	} while (col && col->c_offset);	/* no offset means next record */
+	} while (col && col->c_offset);	/* no offset means a new record */
+
+	if (!col)/* end of a row */
+		strcpy(buff, ");\n");
 
 	*colptr = col;
-	if (!col) {
-		strcpy(buff, ");\n");
-		buff += strlen(");\n");
-	}
-
-	return buff;
 }
 
 /*
- * writes the string value of the specified column in
- * a row from `src' to `buff'
+ * write the string value of the column pointed to by `col' from `src'
+ * to `buff'
  */
 static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col)
 {
-	unsigned cur_len;
+	size_t cur_len;
 	long num_val;
 
 	if (col->c_nullable) {

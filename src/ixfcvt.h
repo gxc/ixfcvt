@@ -29,6 +29,12 @@ enum DB2_DATA_TYPE {
 	TIMESTAMP = 392
 };
 
+struct summary {
+	int s_c_cnt;		/* C record count */
+	long s_d_cnt;		/* D record conut */
+	size_t s_rec_size;	/* maximum record size */
+};
+
 /* TO-DO: IXFCDEFL, IXFCDEFV */
 /* singly linked list of column definition */
 struct column_desc {
@@ -50,7 +56,10 @@ struct table_desc {
 	struct column_desc *c_head;	/* point to first column_desc */
 };
 
+void init_d_buffers(const struct table_desc *tbl);
+void dispose_d_buffers(void);
 void parse_and_output(int ifd, int ofd, int cfd, const char *table_name);
+void get_summary(int fd, struct summary *sum);
 void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
 		    const char *table_name);
 void parse_c_record(const unsigned char *rec, struct column_desc *col);

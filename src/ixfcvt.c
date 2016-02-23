@@ -23,7 +23,6 @@
 #define IXF_BAD_FORMAT "Invalid IXF file"
 
 static ssize_t get_record_len(int fd);
-static ssize_t max_record_size(int fd);
 static _Bool get_record(int fd, unsigned char *rec, ssize_t rec_size);
 static void append_column(struct column_desc *col, struct table_desc *tbl);
 static void free_table(struct table_desc *tbl);
@@ -39,15 +38,19 @@ static void free_columns(struct column_desc *head);
  */
 void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 {
-	unsigned char *rec;
-	ssize_t rec_len;
+	struct summary sum;
 	struct table_desc *tbl;
 	struct column_desc *col;
+	unsigned char *rec;
+	ssize_t rec_len;
+	long d_processed;
 
-	rec = alloc_buff(max_record_size(ifd));
+	get_summary(ifd, &sum);
+	rec = alloc_buff(sum.s_rec_size);
 	tbl = alloc_buff(sizeof(struct table_desc));
 	tbl->c_head = NULL;
 
+	d_processed = 0;
 	while ((rec_len = get_record_len(ifd)) > 0) {
 		if (!get_record(ifd, rec, rec_len))
 			err_exit(IXF_BAD_FORMAT);
@@ -64,8 +67,13 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 			append_column(col, tbl);
 			break;
 		case 'D':
+			if (d_processed == 0)
+				init_d_buffers(tbl);
 			/* produce INSERT statement according to D record */
 			d_record_to_sql(ofd, rec, tbl);
+			++d_processed;
+			if (d_processed == sum.s_d_cnt)
+				dispose_d_buffers();
 			break;
 		case 'A':
 			break;
@@ -80,6 +88,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 	/* output CREATE TABLE statement */
 	table_desc_to_sql(cfd, tbl);
 
+	free_buff(rec);
 	free_table(tbl);
 }
 
@@ -102,28 +111,6 @@ static ssize_t get_record_len(int fd)
 		return str_to_long(buff);
 	else
 		return num_read;
-}
-
-/* Returns the max size of records in an IXF file specified by `fd' */
-static ssize_t max_record_size(int fd)
-{
-	off_t orig;
-	ssize_t max;
-	ssize_t len;
-
-	orig = seek_file(fd, 0, SEEK_CUR);
-
-	max = 0;
-	seek_file(fd, 0, SEEK_SET);
-	while ((len = get_record_len(fd)) > 0) {
-		if (len > max)
-			max = len;
-		seek_file(fd, len, SEEK_CUR);
-	}
-
-	seek_file(fd, orig, SEEK_SET);
-
-	return max;
 }
 
 /* append a column description structure to the singly-linked list */
