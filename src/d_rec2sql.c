@@ -23,7 +23,8 @@
 
 #define D_REC_BUFF_SIZE 32780
 
-static char *fill_in_arguments(char *buff, const struct table_desc *tbl);
+static size_t col_value_size(const struct column_desc *col);
+static void gen_insert_into_clause(char *buff, const struct table_desc *tbl);
 static char *fill_in_values(char *buff, const unsigned char *rec,
 			    const struct table_desc *tbl,
 			    struct column_desc **colptr);
@@ -31,24 +32,108 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col);
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
+
+static char *insert_into_clause;
+static char *values_clause_buffer;
+static size_t values_clause_buffer_size;
+
+/* allocate memory for buffers and generate insert_into_clause */
+void init_d_buffers(const struct table_desc *tbl)
+{
+	size_t size;
+
+	size = calc_insert_into_clause_size(tbl);
+	insert_into_clause = alloc_buff(size);
+	gen_insert_into_clause(insert_into_clause, tbl);
+
+	size = calc_values_clause_size(tbl);
+	values_clause_buffer = alloc_buff(size);
+	values_clause_buffer_size = size;
+}
+
+/* free buffers `insert_into_clause' and `values_clause_buffer' */
+void dispose_d_buffers(void)
+{
+	free_buff(insert_into_clause);
+	free_buff(values_clause_buffer);
+}
+
+/* calculate and return size of insert_into_clause */
+size_t calc_insert_into_clause_size(const struct table_desc *tbl)
+{
+	size_t size;
+	const struct column_desc *col;
+
+	size = strlen("INSERT INTO ");
+	size += strlen(tbl->t_name);
+	size += strlen(" (");
+	for (col = tbl->c_head; col; col = col->next)
+		size += strlen(col->c_name) + 1;	/* 1 for comma */
+	size += strlen(" VALUES ");
+
+	return size;
+}
+
+/* calculate and return size of `values_clause_buffer' */
+size_t calc_values_clause_size(const struct table_desc * tbl)
+{
+	size_t size;
+	const struct column_desc *col;
+
+	size = 0;
+	for (col = tbl->c_head; col; col = col->next)
+		size += col_value_size(col) + 1;
+	size += 3;
+
+	return size;
+}
+
+/* return size of the column pointed to by `col' */
+static size_t col_value_size(const struct column_desc *col)
+{
+	size_t size;
+
+	size = 0;
+	switch (col->c_type) {
+	case CHAR:
+		size = col->c_len + 2;
+		break;
+	case VARCHAR:
+		size = col->c_len + 2;
+		break;
+	case SMALLINT:
+		size = strlen("-32768");
+		break;
+	case INTEGER:
+		size = strlen("-2147483648");
+		break;
+	case DECIMAL:
+		size = col->c_len / 100 + 1;
+		break;
+	case TIMESTAMP:
+		size = col->c_len + 2;
+		break;
+	default:
+		err_exit("%d: Data type not implemented", col->c_type);
+	}
+
+	return size;
+}
+
 /* convert D records of a row to a INSERT statement */
 void d_record_to_sql(int fd, const unsigned char *rec,
 		     const struct table_desc *tbl)
 {
-	static char buff[D_REC_BUFF_SIZE];
 	static struct column_desc *col = NULL;
 
 	if (!col)
 		col = tbl->c_head;
 
-	memset(buff, 0x00, D_REC_BUFF_SIZE);
-	if (col == tbl->c_head) {
-		fill_in_arguments(buff, tbl);
-		write_file(fd, buff);
-		memset(buff, 0x00, D_REC_BUFF_SIZE);
-	}
-	fill_in_values(buff, rec, tbl, &col);
-	write_file(fd, buff);
+	memset(values_clause_buffer, 0x00, values_clause_buffer_size);
+	if (col == tbl->c_head)
+		write_file(fd, insert_into_clause);
+	fill_in_values(values_clause_buffer, rec, tbl, &col);
+	write_file(fd, values_clause_buffer);
 }
 
 /*
@@ -57,7 +142,7 @@ void d_record_to_sql(int fd, const unsigned char *rec,
  * written byte. To be precise, it writes
  * "INSERT INTO table_name (column1, column2, ...) VALUES ".
  */
-static char *fill_in_arguments(char *buff, const struct table_desc *tbl)
+static void gen_insert_into_clause(char *buff, const struct table_desc *tbl)
 {
 	const struct column_desc *col;
 
@@ -71,9 +156,6 @@ static char *fill_in_arguments(char *buff, const struct table_desc *tbl)
 
 	--buff;			/* eat last comma */
 	strcpy(buff, ") VALUES ");
-	buff += strlen(") VALUES ");
-
-	return buff;
 }
 
 /*

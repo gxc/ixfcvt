@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SHELL = /bin/bash
 CC = gcc
 CFLAGS = -std=c99 -D_XOPEN_SOURCE=600 -Wall -Wextra -Wshadow -Wpedantic -Werror
 CFLAGS_DEBUG = -O0 -g -DDEBUG
@@ -22,7 +21,7 @@ CFLAGS_RELEASE = -O2 -DNDEBUG
 CPPFLAGS = -I.
 LDFLAGS = -L.
 LDLIBS =
-OBJS = main.o ixfcvt.o parse_t.o parse_c.o parse_d.o tc_rec2sql.o d_rec2sql.o util.o
+OBJS = main.o ixfcvt.o summary.o parse_t.o parse_c.o parse_d.o tc_rec2sql.o d_rec2sql.o util.o
 PROG = ixfcvt
 
 .PHONY : all
