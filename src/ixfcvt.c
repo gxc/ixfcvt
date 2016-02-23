@@ -88,6 +88,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 	/* output CREATE TABLE statement */
 	table_desc_to_sql(cfd, tbl);
 
+	free_buff(rec);
 	free_table(tbl);
 }
 
