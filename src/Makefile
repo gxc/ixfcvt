@@ -15,8 +15,8 @@
 # limitations under the License.
 
 CC = gcc
-CFLAGS = -std=c99 -D_XOPEN_SOURCE=600 -Wall -Wextra -Wshadow -Wpedantic -Werror
-CFLAGS_DEBUG = -O0 -g -DDEBUG
+CFLAGS = -std=c99 -D_XOPEN_SOURCE=600 -Wall -Wextra -Wshadow -pedantic -Werror
+CFLAGS_DEBUG = -Og -g -DDEBUG
 CFLAGS_RELEASE = -O2 -DNDEBUG
 CPPFLAGS = -I.
 LDFLAGS = -L.
@@ -34,6 +34,11 @@ release : all
 debug : CFLAGS += $(CFLAGS_DEBUG)
 debug : all
 
+.PHONY : prof
+prof : CFLAGS += -pg
+prof : LDFLAGS += -pg
+prof : debug
+
 all : $(OBJS)
 	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS) $(LDLIBS)
 
@@ -44,4 +49,5 @@ all : $(OBJS)
 clean :
 	-rm $(OBJS) $(PROG)
 	-rm *~
+	-rm gmon.out
 
