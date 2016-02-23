@@ -56,9 +56,9 @@ struct table_desc {
 	struct column_desc *c_head;	/* point to first column_desc */
 };
 
-void parse_and_output(int ifd, int ofd, int cfd, const char *table_name);
 void init_d_buffers(const struct table_desc *tbl);
 void dispose_d_buffers(void);
+void parse_and_output(int ifd, int ofd, int cfd, const char *table_name);
 void get_summary(int fd, struct summary *sum);
 void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
 		    const char *table_name);
@@ -69,6 +69,4 @@ void table_desc_to_sql(int fd, const struct table_desc *tbl);
 void d_record_to_sql(int fd, const unsigned char *rec,
 		     const struct table_desc *tbl);
 
-size_t calc_insert_into_clause_size(const struct table_desc *tbl);
-size_t calc_values_clause_size(const struct table_desc *tbl);
 #endif
