@@ -25,9 +25,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "v0.40 <debug>"
+#define VERSION "v0.43 <debug>"
 #else
-#define VERSION "v0.40"
+#define VERSION "v0.43"
 #endif
 
 static void ignore_lock_fail_or_exit(const char *filename);
@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
 	const char *const version_info = "\n\
 ixfcvt Version %s\n\
 A tool for converting IBM PC/IXF format files to SQL statements\n\
-GitHub: https://github.com/gxc/ixfcvt\n\
 \n\
+GitHub: https://github.com/gxc/ixfcvt\n\
 \n\
 Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>\n\
 \n\
@@ -53,7 +53,6 @@ distributed under the License is distributed on an \"AS IS\" BASIS,\n\
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n\
 See the License for the specific language governing permissions and\n\
 limitations under the License.\n\
-\n\
 ";
 	const char *const usage_info = "\n\
 Usage: %s [-c CFILE] [-t TNAME] [-o OFILE] IXFFILE\n\
@@ -69,7 +68,6 @@ Options:\n\
     -t TNAME    use <TNAME> as the table name when output\n\
                 If not specified, use data name of <IXFFILE>\n\
     -v          show version: \"ixfcvt %s by Guo, Xingchun\"\n\
-\n\
 ";
 
 	int errflg;		/* error on command line arguments */
