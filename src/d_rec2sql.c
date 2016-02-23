@@ -78,6 +78,7 @@ void d_record_to_sql(int ofd, const unsigned char *rec,
 static size_t insert_into_clause_size(const struct table_desc *tbl)
 {
 	const size_t COMMA_LEN = 1U;
+	const size_t NULL_TERM_LEN = 1U;
 	size_t size;
 	const struct column_desc *col;
 
@@ -87,6 +88,7 @@ static size_t insert_into_clause_size(const struct table_desc *tbl)
 	for (col = tbl->c_head; col; col = col->next)
 		size += strlen(col->c_name) + COMMA_LEN;
 	size += strlen(" VALUES ");
+	size += NULL_TERM_LEN;
 
 	return size;
 }
@@ -115,7 +117,7 @@ static void gen_insert_into_clause(char *buff, const struct table_desc *tbl)
 static size_t max_d_values_size(const struct table_desc *tbl)
 {
 	const size_t COMMA_LEN = 1U;
-	const size_t WRAPPER_LEN = 3U;
+	const size_t WRAPPER_LEN = 4U;
 	size_t max;
 	size_t size;
 	const struct column_desc *col;
