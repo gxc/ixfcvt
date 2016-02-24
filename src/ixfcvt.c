@@ -69,9 +69,9 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 		case 'D':
 			if (d_processed == 0)
 				init_d_buffers(tbl);
-			/* produce INSERT statement according to D record */
 			d_record_to_sql(ofd, rec, tbl);
 			++d_processed;
+			show_progress(d_processed, sum.s_d_cnt);
 			if (d_processed == sum.s_d_cnt)
 				dispose_d_buffers();
 			break;

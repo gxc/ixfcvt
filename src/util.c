@@ -220,3 +220,22 @@ _Bool prompt_y_or_n(void)
 		fputs("Please answer y or n: ", stdout);
 	}
 }
+
+/* showcase the progress in percent (cur / sum) */
+void show_progress(long cur, long sum)
+{
+	char *const MSG = "In processing... ";
+	static int pct;
+	int tmp;
+
+	tmp = cur * 100 / sum;
+	if (tmp > pct) {
+		pct = tmp;
+		if (pct == 0)
+			fputs(MSG, stderr);
+		else if (pct == 100)
+			fprintf(stderr, "\r%s(done)\n", MSG);
+		else
+			fprintf(stderr, "\r%s(%d%%)", MSG, pct);
+	}
+}
