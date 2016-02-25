@@ -45,6 +45,8 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 	ssize_t rec_len;
 	long d_processed;
 
+	err_msg("%s\r", "Preparing...");
+
 	get_summary(ifd, &sum);
 	rec = alloc_buff(sum.s_rec_size);
 	tbl = alloc_buff(sizeof(struct table_desc));
