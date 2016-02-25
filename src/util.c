@@ -23,7 +23,6 @@
 #include <string.h>
 #include <unistd.h>
 
-static void print_errmsg(const char *format, va_list ap);
 static _Bool is_blanks(const char *str);
 
 /* write error message to stderr */
@@ -32,7 +31,7 @@ void err_msg(const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	print_errmsg(format, ap);
+	vfprintf(stderr, format, ap);
 	va_end(ap);
 }
 
@@ -42,8 +41,9 @@ void err_exit(const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	print_errmsg(format, ap);
+	vfprintf(stderr, format, ap);
 	va_end(ap);
+	putc('\n', stderr);
 	exit(EXIT_FAILURE);
 }
 
@@ -53,16 +53,10 @@ void usage(int status, const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	print_errmsg(format, ap);
-	va_end(ap);
-	exit(status);
-}
-
-/* print the error message and a newline character */
-static void print_errmsg(const char *format, va_list ap)
-{
 	vfprintf(stderr, format, ap);
+	va_end(ap);
 	putc('\n', stderr);
+	exit(status);
 }
 
 /*
@@ -71,9 +65,9 @@ static void print_errmsg(const char *format, va_list ap)
  */
 long str_to_long(const char *str)
 {
+	const int BASE = 10;
 	long res;
 	char *tailptr;
-	const int base = 10;
 
 	if (!str || *str == '\0')
 		err_exit("%s: null or empty string", "str_to_long");
@@ -81,7 +75,7 @@ long str_to_long(const char *str)
 		return 0;
 
 	errno = 0;
-	res = strtol(str, &tailptr, base);
+	res = strtol(str, &tailptr, BASE);
 	if (errno)		/* ERANGE */
 		err_exit("%s: overflow (%s)", "str_to_long", str);
 	if (*tailptr)
@@ -203,7 +197,7 @@ _Bool prompt_y_or_n(void)
 	int c;
 	int ans;
 
-	fputs(" (y/n): ", stdout);
+	fputs(" (y/n): ", stderr);
 	while (1) {
 		c = fgetc(stdin);
 		ans = tolower(c);
@@ -217,25 +211,26 @@ _Bool prompt_y_or_n(void)
 		if (ans == 'n')
 			return 0;
 
-		fputs("Please answer y or n: ", stdout);
+		fputs("Please answer y or n: ", stderr);
 	}
 }
 
 /* showcase the progress in percent (cur / sum) */
 void show_progress(long cur, long sum)
 {
-	char *const MSG = "In processing... ";
+	char *const PROC_MSG = "Processing...";
+	char *const DONE_MSG = "Processing is completed.";
 	static int pct;
 	int tmp;
 
-	tmp = cur * 100 / sum;
+	tmp = cur * 100L / sum;
 	if (tmp > pct) {
 		pct = tmp;
 		if (pct == 0)
-			fputs(MSG, stderr);
+			err_msg("%s\r", PROC_MSG);
 		else if (pct == 100)
-			fprintf(stderr, "\r%s(done)\n", MSG);
+			err_msg("%s\n", DONE_MSG);
 		else
-			fprintf(stderr, "\r%s(%d%%)", MSG, pct);
+			err_msg("%s (%d%%)\r", PROC_MSG, pct);
 	}
 }

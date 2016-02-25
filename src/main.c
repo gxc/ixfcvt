@@ -16,7 +16,6 @@
 
 #include <fcntl.h>
 #include <locale.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -112,20 +111,20 @@ Options:\n\
 			break;
 		case ':':
 			errflg++;
-			err_msg("Option -%c requires an argument.", optopt);
+			err_msg("Option -%c requires an argument\n", optopt);
 			break;
 		case '?':
 			errflg++;
-			err_msg("Unrecognized option: -%c.", optopt);
+			err_msg("Unrecognized option: -%c\n", optopt);
 			break;
 		}
 	}
 
 	if (optind == argc) {
-		err_msg("%s", "No input IXF file specified.");
+		err_msg("%s", "No input IXF file specified");
 		errflg++;
 	} else if (argc - optind > 1) {
-		err_msg("%s", "Too many input files specified.");
+		err_msg("%s", "Too many input files specified");
 		errflg++;
 	} else {
 		ifile = argv[optind];
@@ -170,8 +169,7 @@ static void ignore_lock_fail_or_exit(const char *filename)
 {
 	_Bool is_ignored;
 
-	fprintf(stdout, "Failed to lock file: %s\n"
-		"Do you want to continue?", filename);
+	err_msg("Failed to lock file: %s\nDo you want to continue?", filename);
 	is_ignored = prompt_y_or_n();
 
 	if (!is_ignored)
