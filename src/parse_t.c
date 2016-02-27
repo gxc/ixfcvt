@@ -42,7 +42,7 @@ void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
 	if (table_name) {
 		tbl->t_name = strdup(table_name);
 		if (!tbl->t_name)
-			err_exit("virtual memory exhausted");
+			exit_with_std_msg();
 	} else {
 		memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
 		memcpy(buff, rec + IXFTNAML_OFFSET, IXFTNAML_BYTES);
