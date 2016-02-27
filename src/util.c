@@ -36,7 +36,7 @@ void err_msg(const char *format, ...)
 }
 
 /* write error message to stderr and exit */
-void err_exit(const char *format, ...)
+void fmt_err_exit(const char *format, ...)
 {
 	va_list ap;
 
@@ -47,10 +47,10 @@ void err_exit(const char *format, ...)
 	exit(EXIT_FAILURE);
 }
 
-/* print standard error message and exit */
-void exit_with_std_msg(void)
+/* print `msg:' and standard error message, then exit */
+void err_exit(const char *msg)
 {
-	perror(NULL);
+	perror(msg);
 	exit(EXIT_FAILURE);
 }
 
@@ -77,17 +77,17 @@ long str_to_long(const char *str)
 	char *tailptr;
 
 	if (!str || *str == '\0')
-		err_exit("%s: null or empty string", "str_to_long");
+		fmt_err_exit("%s: null or empty string", "str_to_long");
 	if (is_blanks(str))
 		return 0;
 
 	errno = 0;
 	res = strtol(str, &tailptr, BASE);
 	if (errno)		/* ERANGE */
-		err_exit("%s: overflow (%s)", "str_to_long", str);
+		fmt_err_exit("%s: overflow (%s)", "str_to_long", str);
 	if (*tailptr)
-		err_exit("%s: not a base-10 numeric string (%s)",
-			 "str_to_long", str, res);
+		fmt_err_exit("%s: not a base-10 numeric string (%s)",
+			     "str_to_long", str, res);
 
 	return res;
 }
@@ -111,7 +111,7 @@ void *alloc_buff(size_t size)
 
 	buff = malloc(size);
 	if (!buff)
-		err_exit("virtual memory exhausted");
+		fmt_err_exit("virtual memory exhausted");
 
 	return buff;
 }
@@ -123,7 +123,7 @@ void *resize_buff(void *buff, size_t new_size)
 
 	tmp = realloc(buff, new_size);
 	if (!tmp)
-		err_exit("virtual memory exhausted");
+		fmt_err_exit("virtual memory exhausted");
 
 	return tmp;
 }
@@ -141,7 +141,7 @@ int open_file(const char *file, int oflags, mode_t mode)
 	int fd;
 
 	if ((fd = open(file, oflags, mode)) == -1)
-		err_exit("%s: %s", file, strerror(errno));
+		fmt_err_exit("%s: %s", file, strerror(errno));
 
 	return fd;
 }
@@ -150,7 +150,7 @@ int open_file(const char *file, int oflags, mode_t mode)
 void close_file(int fd)
 {
 	if (close(fd) == -1)
-		exit_with_std_msg();
+		err_exit("close");
 }
 
 /* wrapper function for lseek; exit on error */
@@ -160,7 +160,7 @@ off_t seek_file(int fd, off_t offset, int whence)
 
 	ret = lseek(fd, offset, whence);
 	if (ret == -1)
-		exit_with_std_msg();
+		err_exit("lseek");
 
 	return ret;
 }
@@ -173,9 +173,9 @@ void write_file(int fd, const char *buff)
 
 	to_write = strlen(buff);
 	if ((written = write(fd, buff, to_write)) == -1)
-		err_exit("output file: %s", strerror(errno));
+		fmt_err_exit("output file: %s", strerror(errno));
 	else if (written != to_write)
-		err_exit("output file: resource limit reached");
+		fmt_err_exit("output file: resource limit reached");
 }
 
 /* locks an entire file, returns true on success, false otherwise */
@@ -185,7 +185,7 @@ _Bool lock_entire_file(int fd, short lock_type)
 
 	if (lock_type != F_RDLCK && lock_type != F_WRLCK
 	    && lock_type != F_UNLCK)
-		err_exit("wrong lock type: %hd", lock_type);
+		fmt_err_exit("wrong lock type: %hd", lock_type);
 
 	lck.l_type = lock_type;
 	lck.l_whence = SEEK_SET;

@@ -131,7 +131,7 @@ static int sprint_column(char *buff, const struct column_desc *col)
 		cnt = sprintf(buff, "\t%s TIMESTAMP", col->c_name);
 		break;
 	default:
-		err_exit("DataType %d not implemented", col->c_type);
+		fmt_err_exit("DataType %d not implemented", col->c_type);
 
 	}
 

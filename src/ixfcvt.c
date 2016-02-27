@@ -78,12 +78,13 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 		case 'A':
 			break;
 		default:
-			err_exit("Unknown record type encountered: %c", *rec);
+			fmt_err_exit("Unknown record type encountered: %c",
+				     *rec);
 		}
 	}
 
 	if (rec_len == -1)
-		exit_with_std_msg();
+		err_exit("read");
 
 	/* output CREATE TABLE statement */
 	table_desc_to_sql(cfd, tbl);
@@ -99,9 +100,9 @@ static void get_record(int fd, unsigned char *rec, ssize_t rec_size)
 
 	n_read = read(fd, rec, rec_size);
 	if (n_read == -1)
-		exit_with_std_msg();
+		err_exit("read");
 	else if (n_read < rec_size)
-		err_exit("%s", "Error reading input file");
+		fmt_err_exit("%s", "Error reading input file");
 
 }
 

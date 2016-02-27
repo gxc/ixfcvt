@@ -165,7 +165,7 @@ static size_t col_value_size(const struct column_desc *col)
 		size = col->c_len + SINGLE_QUOTES_LEN;
 		break;
 	default:
-		err_exit("Data type (%d) not implenmented", col->c_type);
+		fmt_err_exit("Data type (%d) not implenmented", col->c_type);
 	}
 
 	return size;
@@ -249,7 +249,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 		buff = write_as_sql_str(buff, src, col->c_len);
 		break;
 	default:
-		err_exit("Data type (%d) not implenmented", col->c_type);
+		fmt_err_exit("Data type (%d) not implenmented", col->c_type);
 	}
 
 	return buff;

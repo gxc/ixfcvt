@@ -20,8 +20,8 @@
 #include <sys/types.h>
 
 void err_msg(const char *format, ...);
-void err_exit(const char *format, ...);
-void exit_with_std_msg(void);
+void fmt_err_exit(const char *format, ...);
+void err_exit(const char *msg);
 void usage(int status, const char *format, ...);
 long str_to_long(const char *str);
 void *alloc_buff(size_t size);

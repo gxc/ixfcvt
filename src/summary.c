@@ -53,7 +53,7 @@ void get_summary(int fd, struct summary *sum)
 	}
 
 	if (n_read == -1)
-		exit_with_std_msg();
+		err_exit("read");
 
 	sum->s_c_cnt = c_cnt;
 	sum->s_d_cnt = d_cnt;
