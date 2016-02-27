@@ -26,12 +26,11 @@ static void gen_insert_into_clause(char *buff, const struct table_desc *tbl);
 static size_t max_d_values_size(const struct table_desc *tbl);
 static size_t col_value_size(const struct column_desc *col);
 static void fill_in_values(char *buff, const unsigned char *rec,
-			    const struct column_desc *col_head,
-			    struct column_desc **colptr);
+			   const struct column_desc *col_head,
+			   struct column_desc **colptr);
 static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col);
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
-
 
 static char *insert_into_clause;
 static char *values_buff;
@@ -166,7 +165,7 @@ static size_t col_value_size(const struct column_desc *col)
 		size = col->c_len + SINGLE_QUOTES_LEN;
 		break;
 	default:
-		err_exit("%d: Data type not implemented", col->c_type);
+		err_exit("Data type (%d) not implenmented", col->c_type);
 	}
 
 	return size;
@@ -181,8 +180,8 @@ static size_t col_value_size(const struct column_desc *col)
  * or NULL to indicate the end of a row.
  */
 static void fill_in_values(char *buff, const unsigned char *rec,
-			    const struct column_desc *col_head,
-			    struct column_desc **colptr)
+			   const struct column_desc *col_head,
+			   struct column_desc **colptr)
 {
 	const unsigned char *pos;
 	struct column_desc *col;
@@ -199,7 +198,7 @@ static void fill_in_values(char *buff, const unsigned char *rec,
 		col = col->next;
 	} while (col && col->c_offset);	/* no offset means a new record */
 
-	if (!col)/* end of a row */
+	if (!col)		/* end of a row */
 		strcpy(buff, ");\n");
 
 	*colptr = col;
@@ -250,7 +249,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 		buff = write_as_sql_str(buff, src, col->c_len);
 		break;
 	default:
-		err_exit("DB2 data type %d not implenmented", col->c_type);
+		err_exit("Data type (%d) not implenmented", col->c_type);
 	}
 
 	return buff;
