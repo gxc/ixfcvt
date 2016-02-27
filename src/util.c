@@ -226,7 +226,7 @@ _Bool prompt_y_or_n(void)
 void show_progress(long cur, long sum)
 {
 	char *const PROC_MSG = "Processing...";
-	char *const DONE_MSG = "Processing is completed.";
+	char *const DONE_MSG = "Processing complete";
 	static int pct;
 	int tmp;
 
