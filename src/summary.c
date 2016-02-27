@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -33,7 +32,7 @@ void get_summary(int fd, struct summary *sum)
 	long d_cnt;		/* number of D records */
 	ssize_t n_read;		/* return value of read() */
 
-	orig = seek_file(fd, 0, SEEK_CUR);
+	orig = seek_file(fd, 0, SEEK_CUR);	/* backup */
 
 	max = 0;
 	c_cnt = 0;
@@ -47,17 +46,18 @@ void get_summary(int fd, struct summary *sum)
 
 		buff[SUMMARY_BYTES - 1] = '\0';
 		len = str_to_long(buff);
-		if (len > max)
-			max = len;
+		max = len > max ? len : max;
+
+		/* go to next record */
 		seek_file(fd, len - 1, SEEK_CUR);
 	}
 
 	if (n_read == -1)
-		err_exit("%s", strerror(errno));
+		exit_with_std_msg();
 
 	sum->s_c_cnt = c_cnt;
 	sum->s_d_cnt = d_cnt;
 	sum->s_rec_size = max;
 
-	seek_file(fd, orig, SEEK_SET);
+	seek_file(fd, orig, SEEK_SET);	/* restore */
 }
