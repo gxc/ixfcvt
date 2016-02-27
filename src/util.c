@@ -47,6 +47,13 @@ void err_exit(const char *format, ...)
 	exit(EXIT_FAILURE);
 }
 
+/* print standard error message and exit */
+void exit_with_std_msg(void)
+{
+	perror(NULL);
+	exit(EXIT_FAILURE);
+}
+
 /* print USAGE message and exit with specified status */
 void usage(int status, const char *format, ...)
 {
@@ -143,7 +150,7 @@ int open_file(const char *file, int oflags, mode_t mode)
 void close_file(int fd)
 {
 	if (close(fd) == -1)
-		err_exit(strerror(errno));
+		exit_with_std_msg();
 }
 
 /* wrapper function for lseek; exit on error */
@@ -153,7 +160,7 @@ off_t seek_file(int fd, off_t offset, int whence)
 
 	ret = lseek(fd, offset, whence);
 	if (ret == -1)
-		err_exit(strerror(errno));
+		exit_with_std_msg();
 
 	return ret;
 }
