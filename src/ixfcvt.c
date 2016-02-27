@@ -20,10 +20,9 @@
 #include "util.h"
 
 #define REC_LEN_BYTES 6
-#define IXF_BAD_FORMAT "Invalid IXF file"
 
 static ssize_t get_record_len(int fd);
-static _Bool get_record(int fd, unsigned char *rec, ssize_t rec_size);
+static void get_record(int fd, unsigned char *rec, ssize_t rec_size);
 static void append_column(struct column_desc *col, struct table_desc *tbl);
 static void free_table(struct table_desc *tbl);
 static void free_columns(struct column_desc *head);
@@ -54,8 +53,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 
 	d_processed = 0;
 	while ((rec_len = get_record_len(ifd)) > 0) {
-		if (!get_record(ifd, rec, rec_len))
-			err_exit(IXF_BAD_FORMAT);
+		get_record(ifd, rec, rec_len);
 
 		switch (*rec) {
 		case 'H':
@@ -80,12 +78,12 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 		case 'A':
 			break;
 		default:
-			err_exit(IXF_BAD_FORMAT);
+			err_exit("Unknown record type encountered: %c", *rec);
 		}
 	}
 
 	if (rec_len == -1)
-		err_exit(IXF_BAD_FORMAT);
+		exit_with_std_msg();
 
 	/* output CREATE TABLE statement */
 	table_desc_to_sql(cfd, tbl);
@@ -94,12 +92,17 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 	free_table(tbl);
 }
 
-/* Fills the buffer with a record, returns true on success, false on error. */
-static _Bool get_record(int fd, unsigned char *buff, ssize_t rec_size)
+/* Fills the buffer with a record, exits on error. */
+static void get_record(int fd, unsigned char *rec, ssize_t rec_size)
 {
-	if (read(fd, buff, rec_size) == rec_size)
-		return 1;
-	return 0;
+	ssize_t n_read;
+
+	n_read = read(fd, rec, rec_size);
+	if (n_read == -1)
+		exit_with_std_msg();
+	else if (n_read < rec_size)
+		err_exit("%s", "Error reading input file");
+
 }
 
 /* Returns the size of next record on success, -1 on error, 0 on EOF. */
