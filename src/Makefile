@@ -36,9 +36,9 @@ debug : CPPFLAGS += -DDEBUG
 debug : all
 
 .PHONY : prof
-prof : CFLAGS += -pg
-prof : LDFLAGS += -pg
-prof : debug
+prof : CFLAGS += -O2 -g
+prof : LDFLAGS += -DNDEBUG
+prof : all
 
 all : $(OBJS)
 	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS) $(LDLIBS)
@@ -50,5 +50,7 @@ all : $(OBJS)
 clean :
 	-rm $(OBJS) $(PROG)
 	-rm *~
-	-rm gmon.out
 
+.PHONY : cleanall
+cleanall : clean
+	-rm *.out.*
