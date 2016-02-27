@@ -31,3 +31,5 @@ ixfcvt
 
 # Debug files
 *.dSYM/
+*.out.*
+gmon.out
