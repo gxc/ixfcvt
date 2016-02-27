@@ -15,10 +15,8 @@
 # limitations under the License.
 
 CC = gcc
-CFLAGS = -std=c99 -D_XOPEN_SOURCE=600 -Wall -Wextra -Wshadow -pedantic -Werror
-CFLAGS_DEBUG = -Og -g -DDEBUG
-CFLAGS_RELEASE = -O2 -DNDEBUG
-CPPFLAGS = -I.
+CFLAGS = -std=c99 -Wall -Wextra -Wshadow -pedantic -Werror
+CPPFLAGS = -I. -D_XOPEN_SOURCE=600 -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 LDFLAGS = -L.
 LDLIBS =
 OBJS = main.o ixfcvt.o summary.o parse_t.o parse_c.o parse_d.o tc_rec2sql.o d_rec2sql.o util.o
@@ -27,11 +25,14 @@ PROG = ixfcvt
 .PHONY : all
 
 .PHONY : release
-release : CFLAGS += $(CFLAGS_RELEASE)
+release : CFLAGS += -O2
+release : CPPFLAGS += -DNDEBUG
+release : LDFLAGS += -s
 release : all
 
 .PHONY : debug
-debug : CFLAGS += $(CFLAGS_DEBUG)
+debug : CFLAGS += -Og -g
+debug : CPPFLAGS += -DDEBUG
 debug : all
 
 .PHONY : prof
