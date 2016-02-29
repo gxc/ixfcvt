@@ -72,22 +72,22 @@ void usage(int status, const char *format, ...)
  */
 long str_to_long(const char *str)
 {
+	char *const MSG = "Number parsing error";
 	const int BASE = 10;
 	long res;
 	char *tailptr;
 
 	if (!str || *str == '\0')
-		fmt_err_exit("%s: null or empty string", "str_to_long");
+		fmt_err_exit("%s: null or empty string", MSG);
 	if (is_blanks(str))
 		return 0;
 
 	errno = 0;
 	res = strtol(str, &tailptr, BASE);
 	if (errno)		/* ERANGE */
-		fmt_err_exit("%s: overflow (%s)", "str_to_long", str);
+		fmt_err_exit("%s (%s): %s", MSG, str, strerror(errno));
 	if (*tailptr)
-		fmt_err_exit("%s: not a base-10 numeric string (%s)",
-			     "str_to_long", str, res);
+		fmt_err_exit("%s (%s): not a base-10 integer", MSG, str);
 
 	return res;
 }
@@ -230,7 +230,7 @@ void show_progress(long cur, long sum)
 	static int pct;
 	int tmp;
 
-	tmp = (double)cur / (double)sum * 100;
+	tmp = (double)cur / (double)sum *100;
 	if (tmp > pct) {
 		pct = tmp;
 		if (pct == 0)

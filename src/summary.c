@@ -22,7 +22,7 @@
 
 #define SUMMARY_BYTES 7		/* record length(6) + record type) */
 
-void get_summary(int fd, struct summary *sum)
+void get_ixf_summary(int fd, struct summary *sum)
 {
 	char buff[SUMMARY_BYTES];
 	off_t orig;		/* original file offset */
@@ -55,9 +55,9 @@ void get_summary(int fd, struct summary *sum)
 	if (n_read == -1)
 		err_exit("read");
 
-	sum->s_c_cnt = c_cnt;
-	sum->s_d_cnt = d_cnt;
-	sum->s_rec_size = max;
+	sum->s_ccnt = c_cnt;
+	sum->s_dcnt = d_cnt;
+	sum->s_recsz = max;
 
 	seek_file(fd, orig, SEEK_SET);	/* restore */
 }
