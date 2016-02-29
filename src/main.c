@@ -24,9 +24,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "v0.51 <debug>"
+#define VERSION "v0.52 <debug>"
 #else
-#define VERSION "v0.51"
+#define VERSION "v0.52"
 #endif
 
 static void ignore_lock_fail_or_exit(const char *filename);
