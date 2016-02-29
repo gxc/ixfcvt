@@ -230,7 +230,7 @@ void show_progress(long cur, long sum)
 	static int pct;
 	int tmp;
 
-	tmp = cur * 100L / sum;
+	tmp = (double)cur / (double)sum * 100;
 	if (tmp > pct) {
 		pct = tmp;
 		if (pct == 0)
