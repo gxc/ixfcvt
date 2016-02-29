@@ -33,11 +33,9 @@ static void free_columns(struct column_desc *head);
  * ifd: input file of format IXF
  * ofd: output file for INSERT statements
  * cfd: output file for CREATE TABLE statement
- * table_name: user defined table name
  */
-void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
+void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum)
 {
-	struct summary sum;
 	struct table_desc *tbl;
 	struct column_desc *col;
 	unsigned char *rec;
@@ -46,8 +44,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 
 	err_msg("%s\r", "Preparing...");
 
-	get_summary(ifd, &sum);
-	rec = alloc_buff(sum.s_rec_size);
+	rec = alloc_buff(sum->s_recsz);
 	tbl = alloc_buff(sizeof(struct table_desc));
 	tbl->c_head = NULL;
 
@@ -59,7 +56,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 		case 'H':
 			break;
 		case 'T':
-			parse_t_record(rec, tbl, table_name);
+			parse_t_record(rec, tbl, sum->s_tname);
 			break;
 		case 'C':
 			col = alloc_buff(sizeof(struct column_desc));
@@ -69,11 +66,16 @@ void parse_and_output(int ifd, int ofd, int cfd, const char *table_name)
 		case 'D':
 			if (d_processed == 0)
 				init_d_buffers(tbl);
-			d_record_to_sql(ofd, rec, tbl);
+			d_record_to_sql(ofd, rec, tbl, sum->s_cmtsz);
 			++d_processed;
-			show_progress(d_processed, sum.s_d_cnt);
-			if (d_processed == sum.s_d_cnt)
+			show_progress(d_processed, sum->s_dcnt);
+			if (d_processed == sum->s_dcnt) {
+				if (sum->s_cmtsz
+				    && (sum->s_cmtsz == 1
+					|| sum->s_dcnt % sum->s_cmtsz))
+					write_file(ofd, "commit;\n");
 				dispose_d_buffers();
+			}
 			break;
 		case 'A':
 			break;

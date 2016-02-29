@@ -59,15 +59,22 @@ void dispose_d_buffers(void)
 
 /* convert a D record to (part of) an INSERT statement */
 void d_record_to_sql(int ofd, const unsigned char *rec,
-		     const struct table_desc *tbl)
+		     const struct table_desc *tbl, int commit_size)
 {
 	static struct column_desc *col = NULL;
+	static int cnt = 0;
 
 	if (!col)
 		col = tbl->c_head;
 
-	if (col == tbl->c_head)
+	if (col == tbl->c_head) {
+		if (commit_size && cnt == commit_size) {
+			write_file(ofd, "commit;\n");
+			cnt = 0;
+		}
 		write_file(ofd, insert_into_clause);
+		++cnt;
+	}
 	memset(values_buff, 0x00, values_buff_size);
 	fill_in_values(values_buff, rec, tbl->c_head, &col);
 	write_file(ofd, values_buff);

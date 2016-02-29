@@ -29,10 +29,13 @@ enum DB2_DATA_TYPE {
 	TIMESTAMP = 392
 };
 
+/* requirements and basic info of input IXF file */
 struct summary {
-	int s_c_cnt;		/* C record count */
-	long s_d_cnt;		/* D record conut */
-	size_t s_rec_size;	/* maximum record size */
+	int s_cmtsz;		/* commit size */
+	char *s_tname;		/* user-defined table name */
+	int s_ccnt;		/* C record count */
+	long s_dcnt;		/* D record conut */
+	size_t s_recsz;		/* maximum record size */
 };
 
 /* TO-DO: IXFCDEFL, IXFCDEFV */
@@ -58,15 +61,15 @@ struct table_desc {
 
 void init_d_buffers(const struct table_desc *tbl);
 void dispose_d_buffers(void);
-void parse_and_output(int ifd, int ofd, int cfd, const char *table_name);
-void get_summary(int fd, struct summary *sum);
+void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum);
+void get_ixf_summary(int fd, struct summary *sum);
 void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
 		    const char *table_name);
 void parse_c_record(const unsigned char *rec, struct column_desc *col);
 void parse_d_record(const unsigned char *record,
 		    const struct column_desc *col_head);
 void table_desc_to_sql(int fd, const struct table_desc *tbl);
-void d_record_to_sql(int fd, const unsigned char *rec,
-		     const struct table_desc *tbl);
+void d_record_to_sql(int ofd, const unsigned char *rec,
+		     const struct table_desc *tbl, int commit_size);
 
 #endif

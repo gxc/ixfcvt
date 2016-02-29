@@ -24,10 +24,12 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "v0.52 <debug>"
+#define VERSION "v0.60 <debug>"
 #else
-#define VERSION "v0.52"
+#define VERSION "v0.60"
 #endif
+
+#define MAX_COMMIT_SIZE 0xFFFF
 
 static void ignore_lock_fail_or_exit(const char *filename);
 
@@ -54,7 +56,7 @@ See the License for the specific language governing permissions and\n\
 limitations under the License.\n\
 ";
 	char *const usage_info = "\n\
-Usage: %s [-c CFILE] [-t TNAME] [-o OFILE] [IXFFILE]\n\
+Usage: %s [-c CFILE] [-t TNAME] [-o OFILE] [-s SIZE] [IXFFILE]\n\
 Convert an IBM PC/IXF format file to SQL statements\n\
 \n\
 Argument:\n\
@@ -64,17 +66,22 @@ Options:\n\
     -h            display this help and exit\n\
     -o <OFILE>    output data of <IXFFILE> as INSERT statements to <OFILE>\n\
                   If not specified, write to the standard output\n\
-                  <OFILE> should differ from <CFILE>\n\
+                  <IXFFILE>, <OFILE> and <CFILE> must differ from each other\n\
+    -s <SIZE>     issue a COMMIT every <SIZE> rows (default 1000)\n\
+                  If <SIZE> is 0, no COMMIT statement will be issued\n\
     -t <TNAME>    use <TNAME> as the table name when output\n\
                   If not specified, use data name of <IXFFILE>\n\
     -v            show version: \"ixfcvt %s by Guo, Xingchun\"\n\
 ";
 
-	int errflg;		/* error on command line arguments */
 	const char *ifile;	/* input IXF file as data source */
 	const char *ofile;	/* output file to store INSERT statements */
 	const char *cfile;	/* output file to store CREATE TABLE SQL */
-	const char *tname;	/* user defined table name */
+	char *tname;		/* user defined table name */
+	long commit_size;
+
+	struct summary sum;
+	int errflg;		/* error on command line arguments */
 	int ifd;
 	int ofd;
 	int cfd;
@@ -87,12 +94,13 @@ Options:\n\
 	if (argc == 1)
 		usage(EXIT_FAILURE, usage_info, argv[0], VERSION);
 
+	errflg = 0;
 	ifile = NULL;
 	ofile = NULL;
 	cfile = NULL;
 	tname = NULL;
-	errflg = 0;
-	while ((c = getopt(argc, argv, ":c:o:t:hv")) != -1) {
+	commit_size = 1000L;
+	while ((c = getopt(argc, argv, ":c:o:s:t:hv")) != -1) {
 		switch (c) {
 		case 'c':
 			cfile = optarg;
@@ -103,6 +111,13 @@ Options:\n\
 			break;
 		case 'o':
 			ofile = optarg;
+			break;
+		case 's':
+			commit_size = str_to_long(optarg);
+			if (commit_size < 0 || commit_size > MAX_COMMIT_SIZE)
+				fmt_err_exit
+				    ("%s: Commit size must be between 0 and %hu",
+				     argv[0], MAX_COMMIT_SIZE);
 			break;
 		case 't':
 			tname = optarg;
@@ -156,7 +171,10 @@ Options:\n\
 		cfd = open_file("/dev/null", O_WRONLY, 0);
 	}
 
-	parse_and_output(ifd, ofd, cfd, tname);
+	sum.s_cmtsz = (int)commit_size;
+	sum.s_tname = tname;
+	get_ixf_summary(ifd, &sum);
+	parse_and_output(ifd, ofd, cfd, &sum);
 
 	close_file(ifd);
 	close_file(ofd);
