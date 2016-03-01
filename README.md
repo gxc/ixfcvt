@@ -4,8 +4,8 @@
 
 Building:
 
-    cd src && make
-    on AIX: cd src && cp Makefile.AIX Makefile && make
+    on Linux: cd src && make
+    on AIX:   cd src && cp Makefile.AIX Makefile && make
 Usage:
 
     ixfcvt [-c CFILE] [-t TNAME] [-o OFILE] [-s SIZE] [IXFFILE]
@@ -19,7 +19,7 @@ Options:
     -o OFILE    output data of <IXFFILE> as INSERT statements to <OFILE>
                 If not specified, write to the standard output
                 <IXFFILE>, <OFILE> and <CFILE> must differ from each other
-    -s <SIZE>   issue a COMMIT every <SIZE> rows (default 1000)
+    -s SIZE     issue a COMMIT every <SIZE> rows (default 1000)
                 If <SIZE> is 0, no COMMIT statement will be issued
     -t TNAME    use <TNAME> as the table name when output
                 If not specified, use data name of <IXFFILE>

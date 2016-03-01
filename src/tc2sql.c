@@ -21,12 +21,14 @@
 #include "util.h"
 
 #define DEF_BUFF_SIZE 1000
-#define MIN_AVAIL_SIZE 100
+#define MIN_AVAIL_SIZE 200
 #define INCREMENT_SIZE 500
 
 static int sprint_column(char *buff, const struct column_desc *col);
-static int sprint_primary_key(char *buff, const struct column_desc *col_head);
+static int sprint_anon_pk(char *buff, const struct column_desc *col_head);
+static void sprint_named_pk(char *buff, const struct table_desc *tbl);
 static int max_pk_pos(const struct column_desc *col_head);
+static void *ensure_capacity(void *buff, size_t *cur_size, size_t used);
 
 /*
  * This function generates a CREATE TABLE statement from
@@ -43,23 +45,64 @@ void table_desc_to_sql(int fd, const struct table_desc *tbl)
 	buff = alloc_buff(size);
 	stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->t_name);
 	for (col = tbl->c_head; col; col = col->next) {
-		if (stored + MIN_AVAIL_SIZE > size) {
-			size += INCREMENT_SIZE;
-			buff = resize_buff(buff, size);
-		}
+		buff = ensure_capacity(buff, &size, stored);
 		stored += sprint_column(buff + stored, col);
 	}
 
-	stored += sprint_primary_key(buff + stored, tbl->c_head);
-	strcpy(buff + stored, "\n);\n");
+	buff = ensure_capacity(buff, &size, stored);
+	if (tbl->t_pkname && strlen(tbl->t_pkname)) {
+		strcpy(buff + stored, "\n);\n\n");
+		stored += strlen("\n);\n\n");
+		sprint_named_pk(buff + stored, tbl);
+	} else {
+		stored += sprint_anon_pk(buff + stored, tbl->c_head);
+		strcpy(buff + stored, "\n);\n");
+	}
 
 	write_file(fd, buff);
 	free_buff(buff);
 }
 
-/* TO-DO: pk_name if defined */
-/* Writes the primary key list to `buff', returns the bytes written. */
-static int sprint_primary_key(char *buff, const struct column_desc *col_head)
+/* enlarge buffer if necessary */
+static void *ensure_capacity(void *buff, size_t *cur_size, size_t used)
+{
+	if (used +  MIN_AVAIL_SIZE > *cur_size) {
+		buff = resize_buff(buff, *cur_size + INCREMENT_SIZE);
+		*cur_size += INCREMENT_SIZE;
+	}
+
+	return buff;
+}
+
+/* Writes the named primary key list to `buff' */
+static void sprint_named_pk(char *buff, const struct table_desc *tbl)
+{
+	const struct column_desc *col;
+	int pk_max;
+	int cnt;
+	int i;
+
+	pk_max = max_pk_pos(tbl->c_head);
+	if (pk_max == 0)
+		return;
+
+	cnt =
+	    sprintf(buff, "ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (",
+		    tbl->t_name, tbl->t_pkname);
+
+	for (i = 1; i <= pk_max; ++i) {
+		for (col = tbl->c_head; col; col = col->next)
+			if (col->c_pkpos == i)
+				break;
+		if (i < pk_max)
+			cnt += sprintf(buff + cnt, "%s, ", col->c_name);
+		else
+			cnt += sprintf(buff + cnt, "%s);\n", col->c_name);
+	}
+}
+
+/* Writes the anonymous primary key list to `buff', returns the bytes written. */
+static int sprint_anon_pk(char *buff, const struct column_desc *col_head)
 {
 	const struct column_desc *col;
 	int pk_max;

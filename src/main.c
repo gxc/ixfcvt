@@ -24,9 +24,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "v0.60 <debug>"
+#define VERSION "v0.61 <debug>"
 #else
-#define VERSION "v0.60"
+#define VERSION "v0.61"
 #endif
 
 #define MAX_COMMIT_SIZE 0xFFFF
@@ -60,7 +60,7 @@ Usage: %s [-c CFILE] [-t TNAME] [-o OFILE] [-s SIZE] [IXFFILE]\n\
 Convert an IBM PC/IXF format file to SQL statements\n\
 \n\
 Argument:\n\
-    <IXFFILE>   input IXF format file, the data source\n\
+    <IXFFILE>     input IXF format file, the data source\n\
 Options:\n\
     -c <CFILE>    output CREATE TABLE statement to <CFILE> if specified\n\
     -h            display this help and exit\n\
