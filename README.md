@@ -8,13 +8,14 @@ Building:
     on AIX:   cd src && cp Makefile.AIX Makefile && make
 Usage:
 
-    ixfcvt [-c CFILE] [-t TNAME] [-o OFILE] [-s SIZE] [IXFFILE]
+    ixfcvt [-c CFILE] [-t TNAME] [-e] [-o OFILE] [-s SIZE] [IXFFILE]
 Argument:
 
     <IXFFILE>   input IXF format file, the data source
 Options:
 
     -c CFILE    output CREATE TABLE statement to <CFILE> if specified
+    -e          escape backslash(\\), or use it as literal by default
     -h          display this help and exit
     -o OFILE    output data of <IXFFILE> as INSERT statements to <OFILE>
                 If not specified, write to the standard output
@@ -26,10 +27,11 @@ Options:
     -v          show version: "ixfcvt V0.10 by Guo, Xingchun"
 Examples:
 
-    ./ixfcvt -c create_table.sql -t tableA -o tableA.data.sql -s 2000 source.ixf
-    ./ixfcvt -c create_table.sql -o insert_new_table.sql source.ixf
-    ./ixfcvt -t NEW_TABLE -o insert_new_table.sql source.ixf
-    ./ixfcvt -o insert_new_table.sql source.ixf
+    ./ixfcvt -c create_table.sql -t tableA -e -o tableA.data.sql -s 2000 source.ixf
+    ./ixfcvt -c create_table.sql -o insert_table.sql source.ixf
+    ./ixfcvt -t tableB -o insert_table.sql source.ixf
+    ./ixfcvt -e -o insert_table.sql source.ixf
+    ./ixfcvt -o insert_table.sql source.ixf
     ./ixfcvt source.ixf
 
 Licensed under the Apache License, Version 2.0.

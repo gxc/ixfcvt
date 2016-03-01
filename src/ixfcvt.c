@@ -42,8 +42,6 @@ void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum)
 	ssize_t rec_len;
 	long d_processed;
 
-	err_msg("%s\r", "Preparing...");
-
 	rec = alloc_buff(sum->s_recsz);
 	tbl = alloc_buff(sizeof(struct table_desc));
 	tbl->c_head = NULL;
@@ -64,15 +62,15 @@ void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum)
 			append_column(col, tbl);
 			break;
 		case 'D':
-			if (d_processed == 0)
+			if (d_processed == 0) {
 				init_d_buffers(tbl);
-			d_record_to_sql(ofd, rec, tbl, sum->s_cmtsz);
+				assign_d_args(sum);
+			}
+			d_record_to_sql(ofd, rec, tbl);
 			++d_processed;
 			show_progress(d_processed, sum->s_dcnt);
 			if (d_processed == sum->s_dcnt) {
-				if (sum->s_cmtsz
-				    && (sum->s_cmtsz == 1
-					|| sum->s_dcnt % sum->s_cmtsz))
+				if (sum->s_cmtsz)
 					write_file(ofd, "commit;\n");
 				dispose_d_buffers();
 			}

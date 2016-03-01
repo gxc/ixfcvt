@@ -28,7 +28,7 @@ static int sprint_column(char *buff, const struct column_desc *col);
 static int sprint_anon_pk(char *buff, const struct column_desc *col_head);
 static void sprint_named_pk(char *buff, const struct table_desc *tbl);
 static int max_pk_pos(const struct column_desc *col_head);
-static void *ensure_capacity(void *buff, size_t *cur_size, size_t used);
+static void *ensure_capacity(void *buff, size_t * cur_size, size_t used);
 
 /*
  * This function generates a CREATE TABLE statement from
@@ -64,9 +64,9 @@ void table_desc_to_sql(int fd, const struct table_desc *tbl)
 }
 
 /* enlarge buffer if necessary */
-static void *ensure_capacity(void *buff, size_t *cur_size, size_t used)
+static void *ensure_capacity(void *buff, size_t * cur_size, size_t used)
 {
-	if (used +  MIN_AVAIL_SIZE > *cur_size) {
+	if (used + MIN_AVAIL_SIZE > *cur_size) {
 		buff = resize_buff(buff, *cur_size + INCREMENT_SIZE);
 		*cur_size += INCREMENT_SIZE;
 	}

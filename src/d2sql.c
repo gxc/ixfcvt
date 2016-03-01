@@ -35,6 +35,8 @@ static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 static char *insert_into_clause;
 static char *values_buff;
 static size_t values_buff_size;
+static int commit_size;
+static _Bool escape_backslash;
 
 /* allocate memory for buffers and build INSERT INTO clause */
 void init_d_buffers(const struct table_desc *tbl)
@@ -50,6 +52,13 @@ void init_d_buffers(const struct table_desc *tbl)
 	values_buff_size = size;
 }
 
+/* assign struct summary to `commit_size' and `escape_backslash' */
+void assign_d_args(const struct summary *sum)
+{
+	commit_size = sum->s_cmtsz;
+	escape_backslash = sum->s_escbs;
+}
+
 /* free buffers `insert_into_clause' and `values_buff' */
 void dispose_d_buffers(void)
 {
@@ -59,7 +68,7 @@ void dispose_d_buffers(void)
 
 /* convert a D record to (part of) an INSERT statement */
 void d_record_to_sql(int ofd, const unsigned char *rec,
-		     const struct table_desc *tbl, int commit_size)
+		     const struct table_desc *tbl)
 {
 	static struct column_desc *col = NULL;
 	static int cnt = 0;
@@ -263,7 +272,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 }
 
 /*
- * This function escapes single quotes and backslashes in `src',
+ * This function escapes single quotes and backslashes (if required),
  * wraps it in single quotes, writes the result into the buffer,
  * and returns a pointer to the byte following the last written
  * byte in the buffer.
@@ -276,7 +285,7 @@ static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len)
 	*buff++ = '\'';
 	for (i = 0; i < len; ++i) {
 		*buff++ = *src;
-		if (*src == '\'' || *src == '\\')
+		if (*src == '\'' || (*src == '\\' && escape_backslash))
 			*buff++ = *src;
 		src++;
 	}

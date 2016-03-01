@@ -24,9 +24,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "v0.61 <debug>"
+#define VERSION "v0.62 <debug>"
 #else
-#define VERSION "v0.61"
+#define VERSION "v0.62"
 #endif
 
 #define MAX_COMMIT_SIZE 0xFFFF
@@ -56,13 +56,14 @@ See the License for the specific language governing permissions and\n\
 limitations under the License.\n\
 ";
 	char *const usage_info = "\n\
-Usage: %s [-c CFILE] [-t TNAME] [-o OFILE] [-s SIZE] [IXFFILE]\n\
+Usage: %s [-c CFILE] [-t TNAME] [-e] [-o OFILE] [-s SIZE] [IXFFILE]\n\
 Convert an IBM PC/IXF format file to SQL statements\n\
 \n\
 Argument:\n\
     <IXFFILE>     input IXF format file, the data source\n\
 Options:\n\
     -c <CFILE>    output CREATE TABLE statement to <CFILE> if specified\n\
+    -e            escape backslash(\\), or use it as literal by default\n\
     -h            display this help and exit\n\
     -o <OFILE>    output data of <IXFFILE> as INSERT statements to <OFILE>\n\
                   If not specified, write to the standard output\n\
@@ -78,7 +79,8 @@ Options:\n\
 	const char *ofile;	/* output file to store INSERT statements */
 	const char *cfile;	/* output file to store CREATE TABLE SQL */
 	char *tname;		/* user defined table name */
-	long commit_size;
+	long commit_size;	/* commit size */
+	_Bool esc_bs;		/* whether escape backslash */
 
 	struct summary sum;
 	int errflg;		/* error on command line arguments */
@@ -99,11 +101,15 @@ Options:\n\
 	ofile = NULL;
 	cfile = NULL;
 	tname = NULL;
+	esc_bs = 0;
 	commit_size = 1000L;
-	while ((c = getopt(argc, argv, ":c:o:s:t:hv")) != -1) {
+	while ((c = getopt(argc, argv, ":c:o:s:t:ehv")) != -1) {
 		switch (c) {
 		case 'c':
 			cfile = optarg;
+			break;
+		case 'e':
+			esc_bs = 1;
 			break;
 		case 'h':
 			usage(errflg ? EXIT_FAILURE : EXIT_SUCCESS, usage_info,
@@ -173,6 +179,9 @@ Options:\n\
 
 	sum.s_cmtsz = (int)commit_size;
 	sum.s_tname = tname;
+	sum.s_escbs = esc_bs;
+
+	err_msg("%s\r", "Preparing...");
 	get_ixf_summary(ifd, &sum);
 	parse_and_output(ifd, ofd, cfd, &sum);
 
