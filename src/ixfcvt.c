@@ -40,13 +40,11 @@ void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum)
 	struct column_desc *col;
 	unsigned char *rec;
 	ssize_t rec_len;
-	long d_processed;
 
 	rec = alloc_buff(sum->s_recsz);
 	tbl = alloc_buff(sizeof(struct table_desc));
 	tbl->c_head = NULL;
 
-	d_processed = 0;
 	while ((rec_len = get_record_len(ifd)) > 0) {
 		get_record(ifd, rec, rec_len);
 
@@ -62,18 +60,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum)
 			append_column(col, tbl);
 			break;
 		case 'D':
-			if (d_processed == 0) {
-				init_d_buffers(tbl);
-				assign_d_args(sum);
-			}
-			d_record_to_sql(ofd, rec, tbl);
-			++d_processed;
-			show_progress(d_processed, sum->s_dcnt);
-			if (d_processed == sum->s_dcnt) {
-				if (sum->s_cmtsz)
-					write_file(ofd, "commit;\n");
-				dispose_d_buffers();
-			}
+			d_record_to_sql(ofd, rec, sum, tbl);
 			break;
 		case 'A':
 			break;

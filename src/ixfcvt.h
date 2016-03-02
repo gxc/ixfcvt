@@ -60,9 +60,6 @@ struct table_desc {
 	struct column_desc *c_head;	/* point to first column_desc */
 };
 
-void init_d_buffers(const struct table_desc *tbl);
-void assign_d_args(const struct summary *sum);
-void dispose_d_buffers(void);
 void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum);
 void get_ixf_summary(int fd, struct summary *sum);
 void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
@@ -72,6 +69,6 @@ void parse_d_record(const unsigned char *record,
 		    const struct column_desc *col_head);
 void table_desc_to_sql(int fd, const struct table_desc *tbl);
 void d_record_to_sql(int ofd, const unsigned char *rec,
-		     const struct table_desc *tbl);
+		     const struct summary *sum, const struct table_desc *tbl);
 
 #endif

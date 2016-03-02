@@ -21,6 +21,9 @@
 #include "parse_d.h"
 #include "util.h"
 
+static void init_static_args(const struct summary *sum,
+			     const struct table_desc *tbl);
+static void dispose_static_buffs(void);
 static size_t insert_into_clause_size(const struct table_desc *tbl);
 static void gen_insert_into_clause(char *buff, const struct table_desc *tbl);
 static size_t max_d_values_size(const struct table_desc *tbl);
@@ -35,13 +38,54 @@ static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 static char *insert_into_clause;
 static char *values_buff;
 static size_t values_buff_size;
-static int commit_size;
 static _Bool escape_backslash;
 
-/* allocate memory for buffers and build INSERT INTO clause */
-void init_d_buffers(const struct table_desc *tbl)
+/* convert a D record to (part of) an INSERT statement */
+void d_record_to_sql(int ofd, const unsigned char *rec,
+		     const struct summary *sum, const struct table_desc *tbl)
+{
+	static struct column_desc *col = NULL;
+	static long recs = 0L;
+	static long rows = 0L;
+
+	if (recs == 0L)
+		init_static_args(sum, tbl);
+
+	/* a new row */
+	if (!col) {
+		col = tbl->c_head;
+		write_file(ofd, insert_into_clause);
+		++rows;
+	}
+
+	/* output values of a D record */
+	memset(values_buff, 0x00, values_buff_size);
+	fill_in_values(values_buff, rec, tbl->c_head, &col);
+	write_file(ofd, values_buff);
+	++recs;
+	show_progress(recs, sum->s_dcnt);
+
+	/* output a COMMIT statement if necessary */
+	if (sum->s_cmtsz && (rows == sum->s_cmtsz || recs == sum->s_dcnt)) {
+		write_file(ofd, "commit;\n");
+		rows = 0;
+	}
+
+	if (recs == sum->s_dcnt)
+		dispose_static_buffs();
+}
+
+/*
+ * initialize file scope static variables
+ * read out whether to escape backslashes, allocate memory
+ * for buffers, build an INSERT INTO clause
+ */
+static void init_static_args(const struct summary *sum,
+			     const struct table_desc *tbl)
 {
 	size_t size;
+
+	escape_backslash = sum->s_escbs;
 
 	size = insert_into_clause_size(tbl);
 	insert_into_clause = alloc_buff(size);
@@ -52,41 +96,11 @@ void init_d_buffers(const struct table_desc *tbl)
 	values_buff_size = size;
 }
 
-/* assign struct summary to `commit_size' and `escape_backslash' */
-void assign_d_args(const struct summary *sum)
-{
-	commit_size = sum->s_cmtsz;
-	escape_backslash = sum->s_escbs;
-}
-
 /* free buffers `insert_into_clause' and `values_buff' */
-void dispose_d_buffers(void)
+static void dispose_static_buffs(void)
 {
 	free_buff(insert_into_clause);
 	free_buff(values_buff);
-}
-
-/* convert a D record to (part of) an INSERT statement */
-void d_record_to_sql(int ofd, const unsigned char *rec,
-		     const struct table_desc *tbl)
-{
-	static struct column_desc *col = NULL;
-	static int cnt = 0;
-
-	if (!col)
-		col = tbl->c_head;
-
-	if (col == tbl->c_head) {
-		if (commit_size && cnt == commit_size) {
-			write_file(ofd, "commit;\n");
-			cnt = 0;
-		}
-		write_file(ofd, insert_into_clause);
-		++cnt;
-	}
-	memset(values_buff, 0x00, values_buff_size);
-	fill_in_values(values_buff, rec, tbl->c_head, &col);
-	write_file(ofd, values_buff);
 }
 
 /* calculate and return the required size of buffer `insert_into_clause' */

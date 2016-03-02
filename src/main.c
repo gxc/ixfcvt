@@ -24,9 +24,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "v0.62 <debug>"
+#define VERSION "v0.63 <debug>"
 #else
-#define VERSION "v0.62"
+#define VERSION "v0.63"
 #endif
 
 #define MAX_COMMIT_SIZE 0xFFFF
