@@ -36,10 +36,10 @@
 static void tweak_col_length(struct column_desc *col);
 static int get_pk_pos(const char *pkpos);
 
+/* ignore IXFCDEFL, IXFCDEFV now */
 /* parse a C record, store the info in a column_desc struct */
 void parse_c_record(const unsigned char *rec, struct column_desc *col)
 {
-/* ignore IXFCDEFL, IXFCDEFV and IXFCKPOS now */
 	char buff[COL_ATTR_BUFF_SIZE];
 	int c_name_len;
 
@@ -91,6 +91,15 @@ static void tweak_col_length(struct column_desc *col)
 		break;
 	case INTEGER:
 		col->c_len = 4U;
+		break;
+	case BIGINT:
+		col->c_len = 8U;
+		break;
+	case DATE:
+		col->c_len = 10U;
+		break;
+	case TIME:
+		col->c_len = 8U;
 		break;
 	case TIMESTAMP:
 		/* 20 is the number of characters before point */

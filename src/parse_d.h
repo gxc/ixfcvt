@@ -23,7 +23,7 @@
 #define VARCHAR_CUR_LEN_IND_BYTES 2
 #define NULL_VAL_IND_BYTES 2
 
-long parse_ixf_integer(const unsigned char *src, size_t bytes);
+long long parse_ixf_integer(const unsigned char *src, size_t bytes);
 _Bool column_is_null(const unsigned char *null_ind);
 char *decode_packed_decimal(char *buff, const unsigned char *src,
 			    size_t data_length);

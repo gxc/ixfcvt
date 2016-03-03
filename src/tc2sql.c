@@ -77,6 +77,7 @@ static void *ensure_capacity(void *buff, size_t * cur_size, size_t used)
 /* Writes the named primary key list to `buff' */
 static void sprint_named_pk(char *buff, const struct table_desc *tbl)
 {
+	char *const FMT = "ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (";
 	const struct column_desc *col;
 	int pk_max;
 	int cnt;
@@ -86,9 +87,7 @@ static void sprint_named_pk(char *buff, const struct table_desc *tbl)
 	if (pk_max == 0)
 		return;
 
-	cnt =
-	    sprintf(buff, "ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (",
-		    tbl->t_name, tbl->t_pkname);
+	cnt = sprintf(buff, FMT, tbl->t_name, tbl->t_pkname);
 
 	for (i = 1; i <= pk_max; ++i) {
 		for (col = tbl->c_head; col; col = col->next)
@@ -166,9 +165,18 @@ static int sprint_column(char *buff, const struct column_desc *col)
 	case INTEGER:
 		cnt = sprintf(buff, "\t%s INTEGER", col->c_name);
 		break;
+	case BIGINT:
+		cnt = sprintf(buff, "\t%s BIGINT", col->c_name);
+		break;
 	case DECIMAL:
 		cnt = sprintf(buff, "\t%s DECIMAL(%lu, %lu)", col->c_name,
 			      col->c_len / 100U, col->c_len % 100U);
+		break;
+	case DATE:
+		cnt = sprintf(buff, "\t%s DATE", col->c_name);
+		break;
+	case TIME:
+		cnt = sprintf(buff, "\t%s TIME", col->c_name);
 		break;
 	case TIMESTAMP:
 		cnt = sprintf(buff, "\t%s TIMESTAMP", col->c_name);

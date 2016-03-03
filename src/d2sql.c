@@ -171,15 +171,17 @@ static size_t col_value_size(const struct column_desc *col)
 	const size_t SINGLE_QUOTES_LEN = 2U;
 	char *const SMALLINT_MIN = "-32768";
 	char *const INTEGER_MIN = "-2147483648";
+	char *const BIGINT_MIN = "-9223372036854775808";
 
 	size_t size;
 
 	size = 0;
 	switch (col->c_type) {
 	case CHAR:
-		size = col->c_len + SINGLE_QUOTES_LEN;
-		break;
 	case VARCHAR:
+	case DATE:
+	case TIME:
+	case TIMESTAMP:
 		size = col->c_len + SINGLE_QUOTES_LEN;
 		break;
 	case SMALLINT:
@@ -188,11 +190,11 @@ static size_t col_value_size(const struct column_desc *col)
 	case INTEGER:
 		size = strlen(INTEGER_MIN);
 		break;
+	case BIGINT:
+		size = strlen(BIGINT_MIN);
+		break;
 	case DECIMAL:
 		size = col->c_len / 100 + SIGN_LEN;
-		break;
-	case TIMESTAMP:
-		size = col->c_len + SINGLE_QUOTES_LEN;
 		break;
 	default:
 		fmt_err_exit("Data type (%d) not implenmented", col->c_type);
@@ -242,7 +244,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col)
 {
 	size_t cur_len;
-	long num_val;
+	long long num_val;
 
 	if (col->c_nullable) {
 		if (column_is_null(src)) {
@@ -257,6 +259,9 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 
 	switch (col->c_type) {
 	case CHAR:
+	case DATE:
+	case TIME:
+	case TIMESTAMP:
 		buff = write_as_sql_str(buff, src, col->c_len);
 		break;
 	case VARCHAR:
@@ -270,13 +275,14 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 		break;
 	case INTEGER:
 		num_val = parse_ixf_integer(src, col->c_len);
-		buff += sprintf(buff, "%ld", num_val);
+		buff += sprintf(buff, "%ld", (long)num_val);
+		break;
+	case BIGINT:
+		num_val = parse_ixf_integer(src, col->c_len);
+		buff += sprintf(buff, "%lld", num_val);
 		break;
 	case DECIMAL:
 		buff = decode_packed_decimal(buff, src, col->c_len);
-		break;
-	case TIMESTAMP:
-		buff = write_as_sql_str(buff, src, col->c_len);
 		break;
 	default:
 		fmt_err_exit("Data type (%d) not implenmented", col->c_type);
