@@ -1,4 +1,6 @@
 /*
+ * parse_d.c - functions for parsing particular field values
+ *
  * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,15 +34,15 @@ static char *squeeze_zeros(char *decimal);
  * read 2-byte or 4-byte little-endian integer from buffer `src'
  * return the corresponding numeric value of type
  */
-long parse_ixf_integer(const unsigned char *src, size_t bytes)
+long long parse_ixf_integer(const unsigned char *src, size_t bytes)
 {
-	long value;
+	long long value;
 	size_t i;
 
-	/* SMALLINT: 2 bytes; INTEGER: 4bytes */
-	assert(bytes == 2 || bytes == 4);
-	value = 0;
-	for (i = 0; i < bytes; ++i)
+	/* SMALLINT: 2 bytes; INTEGER: 4 bytes; BIGINT: 8 bytes */
+	assert(bytes == 2 || bytes == 4 || bytes == 8);
+	value = 0LL;
+	for (i = 0U; i < bytes; ++i)
 		value |= (unsigned)(*src++) << (8 * i);
 
 	return value;

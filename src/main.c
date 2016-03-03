@@ -1,4 +1,6 @@
 /*
+ * main.c - parse arguments and open files
+ *
  * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,9 +26,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "v0.63 <debug>"
+#define VERSION "0.70 <debug>"
 #else
-#define VERSION "v0.63"
+#define VERSION "0.70"
 #endif
 
 #define MAX_COMMIT_SIZE 0xFFFF
@@ -35,11 +37,12 @@ static void ignore_lock_fail_or_exit(const char *filename);
 
 int main(int argc, char *argv[])
 {
-	char *const version_info = "\n\
-ixfcvt Version %s\n\
-A tool for converting IBM PC/IXF format files to SQL statements\n\
+	char *const VERSION_INFO = "\
+ixfcvt version %s\n\
+A tool for converting an IBM PC/IXF format file to SQL statements\n\
 \n\
-GitHub: https://github.com/gxc/ixfcvt\n\
+Project on GitHub: <https://github.com/gxc/ixfcvt>\n\
+Report bugs to <https://github.com/gxc/ixfcvt/issues>\n\
 \n\
 Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>\n\
 \n\
@@ -53,11 +56,11 @@ Unless required by applicable law or agreed to in writing, software\n\
 distributed under the License is distributed on an \"AS IS\" BASIS,\n\
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n\
 See the License for the specific language governing permissions and\n\
-limitations under the License.\n\
+limitations under the License.\
 ";
-	char *const usage_info = "\n\
+	char *const USAGE_INFO = "\
+ixfcvt: A tool for converting an IBM PC/IXF format file to SQL statements\n\
 Usage: %s [-c CFILE] [-t TNAME] [-e] [-o OFILE] [-s SIZE] [IXFFILE]\n\
-Convert an IBM PC/IXF format file to SQL statements\n\
 \n\
 Argument:\n\
     <IXFFILE>     input IXF format file, the data source\n\
@@ -72,7 +75,7 @@ Options:\n\
                   If <SIZE> is 0, no COMMIT statement will be issued\n\
     -t <TNAME>    use <TNAME> as the table name when output\n\
                   If not specified, use data name of <IXFFILE>\n\
-    -v            show version: \"ixfcvt %s by Guo, Xingchun\"\n\
+    -v            show version: \"ixfcvt v%s by Guo, Xingchun\"\
 ";
 
 	const char *ifile;	/* input IXF file as data source */
@@ -93,8 +96,9 @@ Options:\n\
 	int c;
 
 	setlocale(LC_ALL, "");
+
 	if (argc == 1)
-		usage(EXIT_FAILURE, usage_info, argv[0], VERSION);
+		usage(EXIT_FAILURE, USAGE_INFO, argv[0], VERSION);
 
 	errflg = 0;
 	ifile = NULL;
@@ -112,7 +116,7 @@ Options:\n\
 			esc_bs = 1;
 			break;
 		case 'h':
-			usage(errflg ? EXIT_FAILURE : EXIT_SUCCESS, usage_info,
+			usage(errflg ? EXIT_FAILURE : EXIT_SUCCESS, USAGE_INFO,
 			      argv[0], VERSION);
 			break;
 		case 'o':
@@ -129,7 +133,7 @@ Options:\n\
 			tname = optarg;
 			break;
 		case 'v':
-			usage(EXIT_SUCCESS, version_info, VERSION);
+			usage(EXIT_SUCCESS, VERSION_INFO, VERSION);
 			break;
 		case ':':
 			errflg++;
@@ -153,7 +157,7 @@ Options:\n\
 	}
 
 	if (errflg)
-		usage(EXIT_FAILURE, usage_info, argv[0], VERSION);
+		usage(EXIT_FAILURE, USAGE_INFO, argv[0], VERSION);
 
 	oflags = O_WRONLY | O_CREAT | O_TRUNC;
 	mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
