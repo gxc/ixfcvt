@@ -1,4 +1,6 @@
 /*
+ * tc2sql.c - output CREATE TABLE SQL statements
+ *
  * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

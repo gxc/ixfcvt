@@ -1,4 +1,6 @@
 /*
+ * parse_c.c - parse a C record
+ *
  * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,7 +81,7 @@ static int get_pk_pos(const char *pkpos)
 {
 	if (*pkpos == 'N')
 		return 0;
-	return str_to_long(pkpos);
+	return (int)str_to_long(pkpos);
 }
 
 /* tweak column_desc.c_len */

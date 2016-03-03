@@ -1,4 +1,6 @@
 /*
+ * util.c - definitions of utility functions
+ *
  * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

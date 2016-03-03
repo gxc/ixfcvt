@@ -1,4 +1,6 @@
 /*
+ * ixfcvt.h - definitions of structures and declarations of skeleton functions
+ *
  * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,8 +65,8 @@ struct table_desc {
 	struct column_desc *c_head;	/* point to first column_desc */
 };
 
-void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum);
 void get_ixf_summary(int fd, struct summary *sum);
+void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum);
 void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
 		    const char *table_name);
 void parse_c_record(const unsigned char *rec, struct column_desc *col);
