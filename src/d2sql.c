@@ -16,8 +16,10 @@
  * limitations under the License.
  */
 
+#include <float.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "ixfcvt.h"
 #include "parse_d.h"
@@ -65,10 +67,13 @@ void d_record_to_sql(int ofd, const unsigned char *rec,
 	fill_in_values(values_buff, rec, tbl->c_head, &col);
 	write_file(ofd, values_buff);
 	++recs;
-	show_progress(recs, sum->s_dcnt);
+
+	if (ofd != STDOUT_FILENO)
+		show_progress(recs, sum->s_dcnt);
 
 	/* output a COMMIT statement if necessary */
-	if (sum->s_cmtsz && (rows == sum->s_cmtsz || recs == sum->s_dcnt)) {
+	if (!col && sum->s_cmtsz
+	    && (rows == sum->s_cmtsz || recs == sum->s_dcnt)) {
 		write_file(ofd, "commit;\n");
 		rows = 0;
 	}
@@ -171,9 +176,11 @@ static size_t col_value_size(const struct column_desc *col)
 {
 	const size_t SIGN_LEN = 1U;
 	const size_t SINGLE_QUOTES_LEN = 2U;
-	char *const SMALLINT_MIN = "-32768";
-	char *const INTEGER_MIN = "-2147483648";
-	char *const BIGINT_MIN = "-9223372036854775808";
+	const size_t SMALLINT_STRLEN = 6U;	/* -32768 */
+	const size_t INTEGER_STRLEN = 11U;	/* -2147483648 */
+	const size_t BIGINT_STRLEN = 20U;	/* -9223372036854775808 */
+	const size_t DOUBLE_STRLEN = 22U + DBL_DIG - 15U;
+	/* -1.79769313486232E+308, adjust in case DBL_DIG is not 15 */
 
 	size_t size;
 
@@ -187,19 +194,24 @@ static size_t col_value_size(const struct column_desc *col)
 		size = col->c_len + SINGLE_QUOTES_LEN;
 		break;
 	case SMALLINT:
-		size = strlen(SMALLINT_MIN);
+		size = SMALLINT_STRLEN;
 		break;
 	case INTEGER:
-		size = strlen(INTEGER_MIN);
+		size = INTEGER_STRLEN;
 		break;
 	case BIGINT:
-		size = strlen(BIGINT_MIN);
+		size = BIGINT_STRLEN;
 		break;
 	case DECIMAL:
 		size = col->c_len / 100 + SIGN_LEN;
 		break;
+	case FLOATING_POINT:
+		size = DOUBLE_STRLEN;
+		if (col->c_len == 4U)	/* adjust for REAL */
+			size -= DBL_DIG - FLT_DIG;
+		break;
 	default:
-		fmt_err_exit("Data type (%d) not implenmented", col->c_type);
+		fmt_err_exit("Data type (%d) not implemented", col->c_type);
 	}
 
 	return size;
@@ -245,8 +257,9 @@ static void fill_in_values(char *buff, const unsigned char *rec,
 static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col)
 {
-	size_t cur_len;
-	long long num_val;
+	size_t cur_len;		/*current length of variable-length string */
+	long long num_val;	/* integer */
+	double flt_val;		/* floating point number */
 
 	if (col->c_nullable) {
 		if (column_is_null(src)) {
@@ -286,8 +299,13 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 	case DECIMAL:
 		buff = decode_packed_decimal(buff, src, col->c_len);
 		break;
+	case FLOATING_POINT:
+		flt_val = parse_ixf_float(src, col->c_len);
+		buff += sprintf(buff, "%.*G",
+				col->c_len == 4U ? FLT_DIG : DBL_DIG, flt_val);
+		break;
 	default:
-		fmt_err_exit("Data type (%d) not implenmented", col->c_type);
+		fmt_err_exit("Data type (%d) not implemented", col->c_type);
 	}
 
 	return buff;

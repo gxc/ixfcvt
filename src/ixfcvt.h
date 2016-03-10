@@ -22,7 +22,7 @@
 #include <sys/types.h>
 
 enum DB2_DATA_TYPE {
-	/* not a complete list */
+	/* *not* a complete list */
 	CHAR = 452,
 	VARCHAR = 448,
 	SMALLINT = 500,
@@ -31,7 +31,8 @@ enum DB2_DATA_TYPE {
 	DECIMAL = 484,
 	DATE = 384,
 	TIME = 388,
-	TIMESTAMP = 392
+	TIMESTAMP = 392,
+	FLOATING_POINT = 480	/* DOUBLE or REAL */
 };
 
 /* requirements and basic info of input IXF file */

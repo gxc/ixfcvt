@@ -31,8 +31,8 @@
 static char *squeeze_zeros(char *decimal);
 
 /*
- * read 2-byte or 4-byte little-endian integer from buffer `src'
- * return the corresponding numeric value of type
+ * read a little-endian integer (SMALLINT, INTEGER or BIGINT) from
+ * buffer `src', return the corresponding value of type long long
  */
 long long parse_ixf_integer(const unsigned char *src, size_t bytes)
 {
@@ -40,12 +40,36 @@ long long parse_ixf_integer(const unsigned char *src, size_t bytes)
 	size_t i;
 
 	/* SMALLINT: 2 bytes; INTEGER: 4 bytes; BIGINT: 8 bytes */
-	assert(bytes == 2 || bytes == 4 || bytes == 8);
+	assert(bytes == 2U || bytes == 4U || bytes == 8U);
+
 	value = 0LL;
 	for (i = 0U; i < bytes; ++i)
 		value |= (unsigned)(*src++) << (8 * i);
 
 	return value;
+}
+
+/*
+ * read a floating point number (REAL or DOUBLE) from `src',
+ * return the corresponding value of type double
+ */
+double parse_ixf_float(const unsigned char *src, size_t bytes)
+{
+	const size_t REAL_SIZE = 4U;
+	const size_t DOUBLE_SIZE = 8U;
+	float real;
+	double dbl;
+
+	assert(bytes == REAL_SIZE || bytes == DOUBLE_SIZE);
+	assert(sizeof(float) == REAL_SIZE && sizeof(double) == DOUBLE_SIZE);
+
+	if (bytes == DOUBLE_SIZE) {
+		memcpy(&dbl, src, DOUBLE_SIZE);
+		return dbl;
+	} else {
+		memcpy(&real, src, REAL_SIZE);
+		return (double)real;
+	}
 }
 
 /*

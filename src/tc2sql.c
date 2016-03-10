@@ -183,6 +183,10 @@ static int sprint_column(char *buff, const struct column_desc *col)
 	case TIMESTAMP:
 		cnt = sprintf(buff, "\t%s TIMESTAMP", col->c_name);
 		break;
+	case FLOATING_POINT:
+		cnt = sprintf(buff, "\t%s %s", col->c_name,
+			      col->c_len == 4 ? "REAL" : "DOUBLE");
+		break;
 	default:
 		fmt_err_exit("DataType %d not implemented", col->c_type);
 

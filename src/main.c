@@ -26,9 +26,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "0.70 <debug>"
+#define VERSION "0.72 <debug>"
 #else
-#define VERSION "0.70"
+#define VERSION "0.72"
 #endif
 
 #define MAX_COMMIT_SIZE 0xFFFF
@@ -40,6 +40,13 @@ int main(int argc, char *argv[])
 	char *const VERSION_INFO = "\
 ixfcvt version %s\n\
 A tool for converting an IBM PC/IXF format file to SQL statements\n\
+\n\
+Currently supports the following DB2 data types:\n\
+CHAR, VARCHAR\n\
+SMALLINT, INTEGER, BIGINT\n\
+DECIMAL\n\
+REAL, DOUBLE\n\
+DATE, TIME, TIMESTAMP\n\
 \n\
 Project on GitHub: <https://github.com/gxc/ixfcvt>\n\
 Report bugs to <https://github.com/gxc/ixfcvt/issues>\n\
@@ -185,7 +192,8 @@ Options:\n\
 	sum.s_tname = tname;
 	sum.s_escbs = esc_bs;
 
-	err_msg("%s\r", "Preparing...");
+	if (ofd != STDOUT_FILENO)
+		err_msg("%s\r", "Preparing...");
 	get_ixf_summary(ifd, &sum);
 	parse_and_output(ifd, ofd, cfd, &sum);
 
