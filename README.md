@@ -17,7 +17,7 @@
 
 ##### Building:
     on Linux:   cd src && make
-    on AIX:     cd src && cp Makefile.AIX Makefile && make
+    on AIX:     cd src && make -f Makefile.AIX
 
 ##### Usage:
     ixfcvt [-c CFILE] [-t TNAME] [-e] [-o OFILE] [-s SIZE] [IXFFILE]
@@ -34,7 +34,7 @@
                 If <SIZE> is 0, no COMMIT statement will be issued
     -t TNAME    use <TNAME> as the table name when output
                 If not specified, use data name of <IXFFILE>
-    -v          show version: "ixfcvt V0.72 by Guo, Xingchun"
+    -v          show version: "ixfcvt V0.73 by Guo, Xingchun"
 
 ##### Examples:
     ./ixfcvt -c create_table.sql -t tableA -e -o tableA.data.sql -s 2000 source.ixf
