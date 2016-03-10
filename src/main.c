@@ -26,9 +26,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "0.72 <debug>"
+#define VERSION "0.73 <debug>"
 #else
-#define VERSION "0.72"
+#define VERSION "0.73"
 #endif
 
 #define MAX_COMMIT_SIZE 0xFFFF
@@ -66,6 +66,7 @@ See the License for the specific language governing permissions and\n\
 limitations under the License.\
 ";
 	char *const USAGE_INFO = "\
+\n\
 ixfcvt: A tool for converting an IBM PC/IXF format file to SQL statements\n\
 Usage: %s [-c CFILE] [-t TNAME] [-e] [-o OFILE] [-s SIZE] [IXFFILE]\n\
 \n\
@@ -154,10 +155,10 @@ Options:\n\
 	}
 
 	if (optind == argc) {
-		err_msg("%s", "No input IXF file specified");
+		err_msg("%s\n", "No input IXF file specified");
 		errflg++;
 	} else if (argc - optind > 1) {
-		err_msg("%s", "Too many input files specified");
+		err_msg("%s\n", "Too many input files specified");
 		errflg++;
 	} else {
 		ifile = argv[optind];
