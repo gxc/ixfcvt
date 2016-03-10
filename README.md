@@ -38,10 +38,12 @@
 
 ##### Examples:
     ./ixfcvt -c create_table.sql -t tableA -e -o tableA.data.sql -s 2000 source.ixf
+    ./ixfcvt -c create_table.sql -t tableA -o tableA.data.sql -s 0 source.ixf
     ./ixfcvt -c create_table.sql -o insert_table.sql source.ixf
     ./ixfcvt -t tableB -o insert_table.sql source.ixf
     ./ixfcvt -e -o insert_table.sql source.ixf
     ./ixfcvt -o insert_table.sql source.ixf
+    ./ixfcvt -s0 source.ixf
     ./ixfcvt source.ixf
 
 ##### References:
