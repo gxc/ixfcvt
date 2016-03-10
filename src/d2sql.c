@@ -72,7 +72,8 @@ void d_record_to_sql(int ofd, const unsigned char *rec,
 		show_progress(recs, sum->s_dcnt);
 
 	/* output a COMMIT statement if necessary */
-	if (sum->s_cmtsz && (rows == sum->s_cmtsz || recs == sum->s_dcnt)) {
+	if (!col && sum->s_cmtsz
+	    && (rows == sum->s_cmtsz || recs == sum->s_dcnt)) {
 		write_file(ofd, "commit;\n");
 		rows = 0;
 	}
