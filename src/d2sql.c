@@ -19,6 +19,7 @@
 #include <float.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "ixfcvt.h"
 #include "parse_d.h"
@@ -66,7 +67,9 @@ void d_record_to_sql(int ofd, const unsigned char *rec,
 	fill_in_values(values_buff, rec, tbl->c_head, &col);
 	write_file(ofd, values_buff);
 	++recs;
-	show_progress(recs, sum->s_dcnt);
+
+	if (ofd != STDOUT_FILENO)
+		show_progress(recs, sum->s_dcnt);
 
 	/* output a COMMIT statement if necessary */
 	if (sum->s_cmtsz && (rows == sum->s_cmtsz || recs == sum->s_dcnt)) {
@@ -203,7 +206,7 @@ static size_t col_value_size(const struct column_desc *col)
 		break;
 	case FLOATING_POINT:
 		size = DOUBLE_STRLEN;
-		if (col->len == 4U)	/* adjust for REAL */
+		if (col->c_len == 4U)	/* adjust for REAL */
 			size -= DBL_DIG - FLT_DIG;
 		break;
 	default:
