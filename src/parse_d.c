@@ -40,7 +40,7 @@ long long parse_ixf_integer(const unsigned char *src, size_t bytes)
 	size_t i;
 
 	/* SMALLINT: 2 bytes; INTEGER: 4 bytes; BIGINT: 8 bytes */
-	assert(bytes == 2U || bytes == 4U || bytes == 8U);
+	assert(bytes == 2 || bytes == 4 || bytes == 8);
 
 	value = 0LL;
 	for (i = 0U; i < bytes; ++i)
@@ -55,8 +55,8 @@ long long parse_ixf_integer(const unsigned char *src, size_t bytes)
  */
 double parse_ixf_float(const unsigned char *src, size_t bytes)
 {
-	const size_t REAL_SIZE = 4U;
-	const size_t DOUBLE_SIZE = 8U;
+	const size_t REAL_SIZE = 4;
+	const size_t DOUBLE_SIZE = 8;
 	float real;
 	double dbl;
 

@@ -113,8 +113,8 @@ static void dispose_static_buffs(void)
 /* calculate and return the required size of buffer `insert_into_clause' */
 static size_t insert_into_clause_size(const struct table_desc *tbl)
 {
-	const size_t COMMA_LEN = 1U;
-	const size_t NULL_TERM_LEN = 1U;
+	const size_t COMMA_LEN = 1;
+	const size_t NULL_TERM_LEN = 1;
 	size_t size;
 	const struct column_desc *col;
 
@@ -152,8 +152,8 @@ static void gen_insert_into_clause(char *buff, const struct table_desc *tbl)
 /* calculate and return max size of a string representation of a D record */
 static size_t max_d_values_size(const struct table_desc *tbl)
 {
-	const size_t COMMA_LEN = 1U;
-	const size_t WRAPPER_LEN = 4U;
+	const size_t COMMA_LEN = 1;
+	const size_t WRAPPER_LEN = 4;
 	size_t max;
 	size_t size;
 	const struct column_desc *col;

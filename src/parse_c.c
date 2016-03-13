@@ -89,23 +89,23 @@ static void tweak_col_length(struct column_desc *col)
 {
 	switch (col->c_type) {
 	case SMALLINT:
-		col->c_len = 2U;
+		col->c_len = 2;
 		break;
 	case INTEGER:
-		col->c_len = 4U;
+		col->c_len = 4;
 		break;
 	case BIGINT:
-		col->c_len = 8U;
+		col->c_len = 8;
 		break;
 	case DATE:
-		col->c_len = 10U;
+		col->c_len = 10;
 		break;
 	case TIME:
-		col->c_len = 8U;
+		col->c_len = 8;
 		break;
 	case TIMESTAMP:
 		/* 20 is the number of characters before point */
-		col->c_len += 20U;
+		col->c_len += 20;
 		break;
 	default:
 		break;
