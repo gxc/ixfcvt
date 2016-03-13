@@ -188,7 +188,7 @@ static int sprint_column(char *buff, const struct column_desc *col)
 			      col->c_len == 4 ? "REAL" : "DOUBLE");
 		break;
 	default:
-		fmt_err_exit("DataType %d not implemented", col->c_type);
+		fmt_err_exit(E_DATA_TYPE_NOT_IMPL, col->c_type);
 
 	}
 

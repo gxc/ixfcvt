@@ -21,6 +21,8 @@
 
 #include <sys/types.h>
 
+#define E_DATA_TYPE_NOT_IMPL "data type (%d) not yet implemented"
+
 enum DB2_DATA_TYPE {
 	/* *not* a complete list */
 	CHAR = 452,
