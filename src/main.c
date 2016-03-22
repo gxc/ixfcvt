@@ -91,7 +91,7 @@ Options:\n\
 	const char *cfile;	/* output file to store CREATE TABLE SQL */
 	char *tname;		/* user defined table name */
 	long commit_size;	/* commit size */
-	_Bool esc_bs;		/* whether escape backslash */
+	bool esc_bs;		/* whether escape backslash */
 
 	struct summary sum;
 	int errflg;		/* error on command line arguments */
@@ -208,7 +208,7 @@ Options:\n\
 /* prompt user to deside whether to ignore the file lock failure or to exit */
 static void ignore_lock_fail_or_exit(const char *filename)
 {
-	_Bool is_ignored;
+	bool is_ignored;
 
 	err_msg("Failed to lock file: %s\nDo you want to continue?", filename);
 	is_ignored = prompt_y_or_n();

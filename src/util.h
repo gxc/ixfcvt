@@ -19,6 +19,7 @@
 #ifndef IXFCVT_UTIL_H_
 #define IXFCVT_UTIL_H_
 
+#include <stdbool.h>
 #include <sys/types.h>
 
 void err_msg(const char *format, ...);
@@ -33,8 +34,8 @@ int open_file(const char *file, int oflags, mode_t mode);
 void close_file(int fd);
 off_t seek_file(int fd, off_t offset, int whence);
 void write_file(int fd, const char *buff);
-_Bool lock_entire_file(int fd, short lock_type);
-_Bool prompt_y_or_n(void);
+bool lock_entire_file(int fd, short lock_type);
+bool prompt_y_or_n(void);
 void show_progress(long cur, long sum);
 
 #endif

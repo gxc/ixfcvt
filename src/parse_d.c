@@ -76,18 +76,16 @@ double parse_ixf_float(const unsigned char *src, size_t bytes)
  * Return true if the null indicator represents null, false otherwise.
  * x'0000' for not null, and x'FFFF' for null
  */
-_Bool column_is_null(const unsigned char *null_ind)
+bool column_is_null(const unsigned char *null_ind)
 {
-	long ind;
-
-	ind = parse_ixf_integer(null_ind, NULL_VAL_IND_BYTES);
-	return ind == NULL_VAL_INDICATOR;
+	return parse_ixf_integer(null_ind, NULL_VAL_IND_BYTES) ==
+	    NULL_VAL_INDICATOR;
 }
 
 /* Returns the real length of a VARCHAR column value. */
 size_t get_varchar_cur_len(const unsigned char *len_ind)
 {
-	return parse_ixf_integer(len_ind, VARCHAR_CUR_LEN_IND_BYTES);
+	return (size_t) parse_ixf_integer(len_ind, VARCHAR_CUR_LEN_IND_BYTES);
 }
 
 /*
@@ -101,14 +99,14 @@ char *decode_packed_decimal(char *buff, const unsigned char *src,
 {
 	int precision;
 	int scale;
-	size_t bytes;		/* bytes occupied by the packed-decimal */
+	int bytes;		/* bytes occupied by the packed-decimal */
 	const unsigned char *last_byte;	/* of the decimal in `src' */
-	_Bool is_neg;
+	bool is_neg;
 	char *bp;
 
 	bp = buff;
-	precision = data_length / 100;
-	scale = data_length % 100;
+	precision = (int)data_length / 100;
+	scale = (int)data_length % 100;
 	assert(precision > 0 && precision < 32);
 	assert(scale >= 0 && scale < precision);
 
@@ -143,19 +141,21 @@ char *decode_packed_decimal(char *buff, const unsigned char *src,
 /* squeeze redundant zeros out of a null-terminated decimal string */
 static char *squeeze_zeros(char *decimal)
 {
-	_Bool has_sign;
+	bool has_sign;
 	char *start;
 
-	has_sign = 0;
+	has_sign = false;
 	if (*decimal == '+' || *decimal == '-')
-		has_sign = 1;
+		has_sign = true;
 
-	start = decimal + has_sign;
+	start = decimal;
+	if (has_sign)
+		++start;
 	while (*start && *start == '0')
 		++start;
 	if (*start == '\0' || *start == '.')
 		--start;
-	memmove(decimal + has_sign, start, strlen(start) + 1);
+	memmove(decimal + (int)has_sign, start, strlen(start) + 1);
 
 	return decimal;
 }

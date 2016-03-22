@@ -43,11 +43,11 @@ static int get_pk_pos(const char *pkpos);
 void parse_c_record(const unsigned char *rec, struct column_desc *col)
 {
 	char buff[COL_ATTR_BUFF_SIZE];
-	int c_name_len;
+	size_t c_name_len;
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
 	memcpy(buff, rec + IXFCNAML_OFFSET, IXFCNAML_BYTES);
-	c_name_len = str_to_long(buff);
+	c_name_len = (size_t) str_to_long(buff);
 	col->c_name = alloc_buff(c_name_len + 1);
 	memcpy(col->c_name, rec + IXFCNAME_OFFSET, c_name_len);
 	col->c_name[c_name_len] = '\0';
@@ -58,11 +58,11 @@ void parse_c_record(const unsigned char *rec, struct column_desc *col)
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
 	memcpy(buff, rec + IXFCTYPE_OFFSET, IXFCTYPE_BYTES);
-	col->c_type = str_to_long(buff);
+	col->c_type = (int)str_to_long(buff);
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
 	memcpy(buff, rec + IXFCLENG_OFFSET, IXFCLENG_BYTES);
-	col->c_len = str_to_long(buff);
+	col->c_len = (size_t) str_to_long(buff);
 	tweak_col_length(col);
 
 	memset(buff, 0x00, COL_ATTR_BUFF_SIZE);
@@ -70,7 +70,7 @@ void parse_c_record(const unsigned char *rec, struct column_desc *col)
 	/* the IXFDCOLS field of the D record starts at 1 (not 0) */
 	col->c_offset = str_to_long(buff) - 1;
 
-	col->c_nullable = rec[IXFCNULL_OFFSET] == 'Y';
+	col->c_nullable = (char)rec[IXFCNULL_OFFSET] == 'Y';
 }
 
 /*

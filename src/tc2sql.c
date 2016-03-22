@@ -40,19 +40,19 @@ void table_desc_to_sql(int fd, const struct table_desc *tbl)
 {
 	char *buff;
 	size_t size;
-	size_t stored;
+	long stored;
 	const struct column_desc *col;
 
 	size = DEF_BUFF_SIZE;
 	buff = alloc_buff(size);
 	stored = sprintf(buff, "CREATE TABLE %s (\n", tbl->t_name);
 	for (col = tbl->c_head; col; col = col->next) {
-		buff = ensure_capacity(buff, &size, stored);
+		buff = ensure_capacity(buff, &size, (size_t) stored);
 		stored += sprint_column(buff + stored, col);
 	}
 
-	buff = ensure_capacity(buff, &size, stored);
-	if (tbl->t_pkname && strlen(tbl->t_pkname)) {
+	buff = ensure_capacity(buff, &size, (size_t) stored);
+	if (tbl->t_pkname && strlen(tbl->t_pkname) > 0) {
 		strcpy(buff + stored, "\n);\n\n");
 		stored += strlen("\n);\n\n");
 		sprint_named_pk(buff + stored, tbl);
@@ -79,7 +79,6 @@ static void *ensure_capacity(void *buff, size_t * cur_size, size_t used)
 /* Writes the named primary key list to `buff' */
 static void sprint_named_pk(char *buff, const struct table_desc *tbl)
 {
-	char *const FMT = "ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (";
 	const struct column_desc *col;
 	int pk_max;
 	int cnt;
@@ -89,7 +88,9 @@ static void sprint_named_pk(char *buff, const struct table_desc *tbl)
 	if (pk_max == 0)
 		return;
 
-	cnt = sprintf(buff, FMT, tbl->t_name, tbl->t_pkname);
+	cnt =
+	    sprintf(buff, "ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (",
+		    tbl->t_name, tbl->t_pkname);
 
 	for (i = 1; i <= pk_max; ++i) {
 		for (col = tbl->c_head; col; col = col->next)
@@ -115,7 +116,7 @@ static int sprint_anon_pk(char *buff, const struct column_desc *col_head)
 		return 0;
 
 	strcpy(buff, ",\n\tPRIMARY KEY (");
-	cnt = strlen(",\n\tPRIMARY KEY (");
+	cnt = (int)strlen(",\n\tPRIMARY KEY (");
 
 	for (i = 1; i <= pk_max; ++i) {
 		for (col = col_head; col; col = col->next)
@@ -171,7 +172,7 @@ static int sprint_column(char *buff, const struct column_desc *col)
 		cnt = sprintf(buff, "\t%s BIGINT", col->c_name);
 		break;
 	case DECIMAL:
-		cnt = sprintf(buff, "\t%s DECIMAL(%lu, %lu)", col->c_name,
+		cnt = sprintf(buff, "\t%s DECIMAL(%zd, %zd)", col->c_name,
 			      col->c_len / 100U, col->c_len % 100U);
 		break;
 	case DATE:

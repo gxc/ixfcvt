@@ -28,8 +28,8 @@ void get_ixf_summary(int fd, struct summary *sum)
 {
 	char buff[SUMMARY_BYTES];
 	off_t orig;		/* original file offset */
-	ssize_t max;		/* max record length */
-	ssize_t len;		/* current record length */
+	off_t max;		/* max record length */
+	off_t len;		/* current record length */
 	int c_cnt;		/* number of C records */
 	long d_cnt;		/* number of D records */
 	ssize_t n_read;		/* return value of read() */
@@ -47,7 +47,7 @@ void get_ixf_summary(int fd, struct summary *sum)
 			++d_cnt;
 
 		buff[SUMMARY_BYTES - 1] = '\0';
-		len = str_to_long(buff);
+		len = (off_t) str_to_long(buff);
 		max = len > max ? len : max;
 
 		/* go to next record */
@@ -59,7 +59,7 @@ void get_ixf_summary(int fd, struct summary *sum)
 
 	sum->s_ccnt = c_cnt;
 	sum->s_dcnt = d_cnt;
-	sum->s_recsz = max;
+	sum->s_recsz = (size_t) max;
 
 	seek_file(fd, orig, SEEK_SET);	/* restore */
 }

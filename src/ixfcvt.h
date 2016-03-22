@@ -19,6 +19,7 @@
 #ifndef IXFCVT_IXFCVT_H_
 #define IXFCVT_IXFCVT_H_
 
+#include <stdbool.h>
 #include <sys/types.h>
 
 #define E_DATA_TYPE_NOT_IMPL "data type (%d) not yet implemented"
@@ -41,7 +42,7 @@ enum DB2_DATA_TYPE {
 struct summary {
 	int s_cmtsz;		/* commit size */
 	char *s_tname;		/* user-defined table name */
-	_Bool s_escbs;		/* escape backslash */
+	bool s_escbs;		/* escape backslash */
 	int s_ccnt;		/* C record count */
 	long s_dcnt;		/* D record conut */
 	size_t s_recsz;		/* maximum record size */
@@ -56,7 +57,7 @@ struct column_desc {
 	/* If data type is decimal, the first 3 digits of `c_len'
 	   is the precision, the last 2 digits is the scale */
 	off_t c_offset;		/* offset from beginning of a D record */
-	_Bool c_nullable;	/* whether accepts null values */
+	bool c_nullable;	/* whether accepts null values */
 	int c_pkpos;		/* position in primary key */
 	struct column_desc *next;
 };

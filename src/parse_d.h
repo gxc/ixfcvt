@@ -19,6 +19,7 @@
 #ifndef IXFCVT_PARSE_D_H_
 #define IXFCVT_PARSE_D_H_
 
+#include <stdbool.h>
 #include <sys/types.h>
 
 #define IXFDCOLS_OFFSET 8
@@ -27,7 +28,7 @@
 
 long long parse_ixf_integer(const unsigned char *src, size_t bytes);
 double parse_ixf_float(const unsigned char *src, size_t bytes);
-_Bool column_is_null(const unsigned char *null_ind);
+bool column_is_null(const unsigned char *null_ind);
 char *decode_packed_decimal(char *buff, const unsigned char *src,
 			    size_t data_length);
 size_t get_varchar_cur_len(const unsigned char *len_ind);

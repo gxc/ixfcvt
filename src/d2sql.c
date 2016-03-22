@@ -39,10 +39,10 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 			     const struct column_desc *col);
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len);
 
-static char *insert_into_clause;
-static char *values_buff;
+static char *restrict insert_into_clause;
+static char *restrict values_buff;
 static size_t values_buff_size;
-static _Bool escape_backslash;
+static bool escape_backslash;
 
 /* convert a D record to (part of) an INSERT statement */
 void d_record_to_sql(int ofd, const unsigned char *rec,
@@ -72,7 +72,7 @@ void d_record_to_sql(int ofd, const unsigned char *rec,
 		show_progress(recs, sum->s_dcnt);
 
 	/* output a COMMIT statement if necessary */
-	if (!col && sum->s_cmtsz
+	if (!col && sum->s_cmtsz != 0
 	    && (rows == sum->s_cmtsz || recs == sum->s_dcnt)) {
 		write_file(ofd, "commit;\n");
 		rows = 0;
@@ -162,7 +162,7 @@ static size_t max_d_values_size(const struct table_desc *tbl)
 	size = 0;
 	for (col = tbl->c_head; col; col = col->next) {
 		size += col_value_size(col) + COMMA_LEN;
-		if (!col->next || !col->next->c_offset) {
+		if (!col->next || col->next->c_offset == 0) {
 			max = size > max ? size : max;
 			size = 0;
 		}
@@ -174,13 +174,13 @@ static size_t max_d_values_size(const struct table_desc *tbl)
 /* return size of the string representation of column pointed to by `col' */
 static size_t col_value_size(const struct column_desc *col)
 {
-	const size_t SIGN_LEN = 1U;
-	const size_t SINGLE_QUOTES_LEN = 2U;
-	const size_t SMALLINT_STR_LEN = 6U;	/* -32768 */
-	const size_t INTEGER_STR_LEN = 11U;	/* -2147483648 */
-	const size_t BIGINT_STR_LEN = 20U;	/* -9223372036854775808 */
-	const size_t REAL_STR_LEN = FLT_DIG + 6U;	/* -d.d{FLT_DIG-1}E+dd */
-	const size_t DOUBLE_STR_LEN = DBL_DIG + 7U;	/* -d.d{DBL_DIG-1}E+ddd */
+	const size_t SIGN_LEN = 1;
+	const size_t SINGLE_QUOTES_LEN = 2;
+	const size_t SMALLINT_STR_LEN = 6;	/* -32768 */
+	const size_t INTEGER_STR_LEN = 11;	/* -2147483648 */
+	const size_t BIGINT_STR_LEN = 20;	/* -9223372036854775808 */
+	const size_t REAL_STR_LEN = FLT_DIG + 6;	/* -d.d{FLT_DIG-1}E+dd */
+	const size_t DOUBLE_STR_LEN = DBL_DIG + 7;	/* -d.d{DBL_DIG-1}E+ddd */
 
 	size_t size;
 
@@ -206,7 +206,7 @@ static size_t col_value_size(const struct column_desc *col)
 		size = col->c_len / 100 + SIGN_LEN;
 		break;
 	case FLOATING_POINT:
-		size = col->c_len == 4U ? REAL_STR_LEN : DOUBLE_STR_LEN;
+		size = col->c_len == 4 ? REAL_STR_LEN : DOUBLE_STR_LEN;
 		break;
 	default:
 		fmt_err_exit(E_DATA_TYPE_NOT_IMPL, col->c_type);
@@ -240,7 +240,8 @@ static void fill_in_values(char *buff, const unsigned char *rec,
 		pos = rec + IXFDCOLS_OFFSET + col->c_offset;
 		buff = fill_in_a_value(buff, pos, col);
 		col = col->next;
-	} while (col && col->c_offset);	/* no offset means a new record */
+	} while (col && col->c_offset > 0);
+	/* col->c_offset == 0 means a new record beginning */
 
 	if (!col)		/* end of a row */
 		strcpy(buff, ");\n");
@@ -300,7 +301,7 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 	case FLOATING_POINT:
 		flt_val = parse_ixf_float(src, col->c_len);
 		buff += sprintf(buff, "%.*G",
-				col->c_len == 4U ? FLT_DIG : DBL_DIG, flt_val);
+				col->c_len == 4 ? FLT_DIG : DBL_DIG, flt_val);
 		break;
 	default:
 		fmt_err_exit(E_DATA_TYPE_NOT_IMPL, col->c_type);
@@ -319,13 +320,15 @@ static char *fill_in_a_value(char *buff, const unsigned char *src,
 static char *write_as_sql_str(char *buff, const unsigned char *src, size_t len)
 {
 	size_t i;
+	const char *orig;
 
+	orig = (const char *)src;
 	*buff++ = '\'';
 	for (i = 0; i < len; ++i) {
-		*buff++ = *src;
-		if (*src == '\'' || (*src == '\\' && escape_backslash))
-			*buff++ = *src;
-		src++;
+		*buff++ = *orig;
+		if (*orig == '\'' || (*orig == '\\' && escape_backslash))
+			*buff++ = *orig;
+		orig++;
 	}
 	*buff++ = '\'';
 

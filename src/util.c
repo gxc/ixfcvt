@@ -25,7 +25,9 @@
 #include <string.h>
 #include <unistd.h>
 
-static _Bool is_blanks(const char *str);
+#include "util.h"
+
+static bool is_blanks(const char *str);
 
 /* write error message to stderr */
 void err_msg(const char *format, ...)
@@ -33,7 +35,8 @@ void err_msg(const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	if (vfprintf(stderr, format, ap) < 0)
+		err_exit("vfprintf");
 	va_end(ap);
 }
 
@@ -43,9 +46,9 @@ void fmt_err_exit(const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	if (vfprintf(stderr, format, ap) > 0)
+		putc('\n', stderr);
 	va_end(ap);
-	putc('\n', stderr);
 	exit(EXIT_FAILURE);
 }
 
@@ -62,9 +65,9 @@ void usage(int status, const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	if (vfprintf(stderr, format, ap) > 0)
+		putc('\n', stderr);
 	va_end(ap);
-	putc('\n', stderr);
 	exit(status);
 }
 
@@ -86,7 +89,7 @@ long str_to_long(const char *str)
 
 	errno = 0;
 	res = strtol(str, &tailptr, BASE);
-	if (errno)		/* ERANGE */
+	if (errno == ERANGE)
 		fmt_err_exit("%s (%s): %s", MSG, str, strerror(errno));
 	if (*tailptr)
 		fmt_err_exit("%s (%s): not a base-10 integer", MSG, str);
@@ -98,12 +101,12 @@ long str_to_long(const char *str)
  * Return true if the string entirely consists of spaces, false otherwise.
  * assuming `str' not NULL
  */
-static _Bool is_blanks(const char *str)
+static bool is_blanks(const char *str)
 {
 	while (*str)
 		if (*str++ != ' ')
-			return 0;
-	return 1;
+			return false;
+	return true;
 }
 
 /* wrapper function for malloc; it exits if fail */
@@ -170,18 +173,18 @@ off_t seek_file(int fd, off_t offset, int whence)
 /* write a null terminated buffer to a file */
 void write_file(int fd, const char *buff)
 {
-	int to_write;
-	int written;
+	size_t to_write;
+	ssize_t written;
 
 	to_write = strlen(buff);
 	if ((written = write(fd, buff, to_write)) == -1)
 		fmt_err_exit("output file: %s", strerror(errno));
-	else if (written != to_write)
+	else if (written != (ssize_t) to_write)
 		fmt_err_exit("output file: resource limit reached");
 }
 
 /* locks an entire file, returns true on success, false otherwise */
-_Bool lock_entire_file(int fd, short lock_type)
+bool lock_entire_file(int fd, short lock_type)
 {
 	struct flock lck;
 
@@ -195,19 +198,20 @@ _Bool lock_entire_file(int fd, short lock_type)
 	lck.l_len = 0;
 
 	if (fcntl(fd, F_SETLK, &lck) == 0)
-		return 1;
+		return true;
 	else
-		return 0;
+		return false;
 }
 
 /* Prompts user to choose y or n, returns true or false respectively. */
-_Bool prompt_y_or_n(void)
+bool prompt_y_or_n(void)
 {
 	int c;
 	int ans;
 
-	fputs(" (y/n): ", stderr);
-	while (1) {
+	if (fputs(" (y/n): ", stderr) == EOF)
+		err_exit("fputs");
+	while (true) {
 		c = fgetc(stdin);
 		ans = tolower(c);
 
@@ -216,11 +220,12 @@ _Bool prompt_y_or_n(void)
 			c = fgetc(stdin);
 
 		if (ans == 'y')
-			return 1;
+			return true;
 		if (ans == 'n')
-			return 0;
+			return false;
 
-		fputs("Please answer y or n: ", stderr);
+		if (fputs("Please answer y or n: ", stderr) == EOF)
+			err_exit("fputs");
 	}
 }
 
@@ -232,7 +237,7 @@ void show_progress(long cur, long sum)
 	static int pct;
 	int tmp;
 
-	tmp = (double)cur / (double)sum *100;
+	tmp = (int)((double)cur / (double)sum * 100.0);
 	if (tmp > pct) {
 		pct = tmp;
 		if (pct == 0)

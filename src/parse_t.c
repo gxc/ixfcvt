@@ -37,8 +37,8 @@ void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
 		    const char *table_name)
 {
 	char buff[TBL_ATTR_BUFF_SIZE];
-	int t_name_len;
-	int t_pkname_len;
+	size_t t_name_len;
+	size_t t_pkname_len;
 	const unsigned char *walker;
 
 	if (table_name) {
@@ -48,7 +48,7 @@ void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
 	} else {
 		memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
 		memcpy(buff, rec + IXFTNAML_OFFSET, IXFTNAML_BYTES);
-		t_name_len = str_to_long(buff);
+		t_name_len = (size_t) str_to_long(buff);
 		tbl->t_name = alloc_buff(t_name_len + 1);
 		memcpy(tbl->t_name, rec + IXFTNAME_OFFSET, t_name_len);
 		tbl->t_name[t_name_len] = '\0';
@@ -57,7 +57,7 @@ void parse_t_record(const unsigned char *rec, struct table_desc *tbl,
 
 	memset(buff, 0x00, TBL_ATTR_BUFF_SIZE);
 	memcpy(buff, rec + IXFTCCNT_OFFSET, IXFTCCNT_BYTES);
-	tbl->t_ncols = str_to_long(buff);
+	tbl->t_ncols = (int)str_to_long(buff);
 
 	t_pkname_len = 0;
 	for (walker = rec + IXFTPKNM_OFFSET; *walker; walker++)
@@ -74,8 +74,12 @@ static void strip_ext(char *name, const char *ext)
 	int ext_len;
 	int name_len;
 
-	if (!name || !ext || (ext_len = strlen(ext)) == 0
-	    || (name_len = strlen(name)) <= ext_len)
+	if (!name || !ext)
+		return;
+
+	ext_len = (int)strlen(ext);
+	name_len = (int)strlen(name);
+	if (ext_len == 0 || name_len <= ext_len)
 		return;
 
 	ext_loc = name + name_len - ext_len;
