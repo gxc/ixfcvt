@@ -37,7 +37,7 @@ static void ignore_lock_fail_or_exit(const char *filename);
 
 int main(int argc, char *argv[])
 {
-	char *const VERSION_INFO = "\
+	const char VERSION_INFO[] = "\
 ixfcvt version %s\n\
 A tool for converting an IBM PC/IXF format file to SQL statements\n\
 \n\
@@ -65,7 +65,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n\
 See the License for the specific language governing permissions and\n\
 limitations under the License.\
 ";
-	char *const USAGE_INFO = "\
+	const char USAGE_INFO[] = "\
 \n\
 ixfcvt: A tool for converting an IBM PC/IXF format file to SQL statements\n\
 Usage: %s [-c CFILE] [-t TNAME] [-e] [-o OFILE] [-s SIZE] [IXFFILE]\n\

@@ -77,7 +77,7 @@ void usage(int status, const char *format, ...)
  */
 long str_to_long(const char *str)
 {
-	char *const MSG = "Number parsing error";
+	const char MSG[] = "Number parsing error";
 	const int BASE = 10;
 	long res;
 	char *tailptr;
@@ -232,8 +232,8 @@ bool prompt_y_or_n(void)
 /* showcase the progress in percent (cur / sum) */
 void show_progress(long cur, long sum)
 {
-	char *const PROC_MSG = "Processing...";
-	char *const DONE_MSG = "Processing complete";
+	const char PROC_MSG[] = "Processing...";
+	const char DONE_MSG[] = "Processing complete";
 	static int pct;
 	int tmp;
 
