@@ -24,7 +24,7 @@
 #define REC_LEN_BYTES 6
 
 static ssize_t get_record_len(int fd);
-static void get_record(int fd, unsigned char *rec, ssize_t rec_size);
+static void get_record(int fd, unsigned char *rec, size_t rec_size);
 static void append_column(struct column_desc *col, struct table_desc *tbl);
 static void free_table(struct table_desc *tbl);
 static void free_columns(struct column_desc *head);
@@ -48,7 +48,7 @@ void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum)
 	tbl->c_head = NULL;
 
 	while ((rec_len = get_record_len(ifd)) > 0) {
-		get_record(ifd, rec, rec_len);
+		get_record(ifd, rec, (size_t) rec_len);
 
 		switch (*rec) {
 		case 'H':
@@ -83,14 +83,14 @@ void parse_and_output(int ifd, int ofd, int cfd, const struct summary *sum)
 }
 
 /* Fills the buffer with a record, exits on error. */
-static void get_record(int fd, unsigned char *rec, ssize_t rec_size)
+static void get_record(int fd, unsigned char *rec, size_t rec_size)
 {
 	ssize_t n_read;
 
 	n_read = read(fd, rec, rec_size);
 	if (n_read == -1)
 		err_exit("read");
-	else if (n_read < rec_size)
+	else if ((size_t) n_read < rec_size)
 		fmt_err_exit("%s", "Error reading input file");
 
 }
