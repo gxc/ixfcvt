@@ -124,7 +124,7 @@ char *decode_packed_decimal(char *buff, const unsigned char *src,
 	*bp = *src >> 4 | DIGIT_HIGH_NIBBLE;
 
 	/* place the decimal point if necessary */
-	if (scale) {
+	if (scale > 0) {
 		while (scale-- > 0) {
 			*(bp + 1) = *bp;
 			bp--;
