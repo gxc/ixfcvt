@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CC = gcc
-CFLAGS = -std=c99 -Wall -Wextra -Wshadow -pedantic -Werror
+CC = gcc -m64
+CFLAGS = -std=c99 -Wall -Wextra -Wpedantic -Werror
 CPPFLAGS = -I. -D_XOPEN_SOURCE=600 -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 LDFLAGS = -L.
 LDLIBS =
-OBJS = main.o ixfcvt.o summary.o parse_t.o parse_c.o parse_d.o tc2sql.o d2sql.o util.o
+OBJS = main.o ixfcvt.o summary.o parse_t.o parse_c.o parse_d.o tc2sql.o \
+       d2sql.o util.o
 PROG = ixfcvt
 
 .PHONY : all
@@ -31,7 +32,8 @@ release : LDFLAGS += -s
 release : all
 
 .PHONY : debug
-debug : CFLAGS += -Og -g
+debug : CFLAGS += -Og -g -Wshadow -Wfloat-equal -Wmissing-prototypes \
+	-Wstrict-prototypes -Wwrite-strings -Waggregate-return
 debug : CPPFLAGS += -DDEBUG
 debug : all
 

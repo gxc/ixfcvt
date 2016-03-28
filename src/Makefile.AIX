@@ -16,12 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CC = gcc
+CC = gcc -maix64
 CFLAGS = -O2 -std=c99 -Wall -Wextra -Wshadow -pedantic -Werror
 CPPFLAGS = -I. -DNDEBUG -D_XOPEN_SOURCE=600 -D_LARGE_FILES
 LDFLAGS = -L. -s
 LDLIBS =
-OBJS = main.o ixfcvt.o summary.o parse_t.o parse_c.o parse_d.o tc2sql.o d2sql.o util.o
+OBJS = main.o ixfcvt.o summary.o parse_t.o parse_c.o parse_d.o \
+       tc2sql.o d2sql.o util.o
 PROG = ixfcvt
 
 all : $(OBJS)
