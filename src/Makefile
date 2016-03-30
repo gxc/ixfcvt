@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CC = gcc -m64
-CFLAGS = -std=c99 -Wall -Wextra -Wpedantic -Werror
+CC = gcc
+CFLAGS = -std=c99 -Wall -Wextra -pedantic -Werror
 CPPFLAGS = -I. -D_XOPEN_SOURCE=600 -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 LDFLAGS = -L.
 LDLIBS =
@@ -32,7 +32,7 @@ release : LDFLAGS += -s
 release : all
 
 .PHONY : debug
-debug : CFLAGS += -Og -g -Wshadow -Wfloat-equal -Wmissing-prototypes \
+debug : CFLAGS += -O0 -g -Wshadow -Wfloat-equal -Wmissing-prototypes \
 	-Wstrict-prototypes -Wwrite-strings -Waggregate-return
 debug : CPPFLAGS += -DDEBUG
 debug : all
