@@ -1,7 +1,7 @@
 /*
  * parse_d.c - functions for parsing particular field values
  *
- * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
+ * Copyright 2016,2017 Guo, Xingchun <guoxingchun@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
 #define DIGIT_HIGH_NIBBLE 0x30
 #define NULL_VAL_INDICATOR 0xFFFF
 
-static char *squeeze_zeros(char *decimal);
+static void squeeze_zeros(char *decimal);
 
 /*
  * read a little-endian integer (SMALLINT, INTEGER or BIGINT) from
@@ -137,23 +137,19 @@ char *decode_packed_decimal(char *buff, const unsigned char *src,
 }
 
 /* squeeze redundant zeros out of a null-terminated decimal string */
-static char *squeeze_zeros(char *decimal)
+static void squeeze_zeros(char *decimal)
 {
-	bool has_sign;
 	char *start;
+	size_t len;
 
-	has_sign = false;
 	if (*decimal == '+' || *decimal == '-')
-		has_sign = true;
-
-	start = decimal;
-	if (has_sign)
-		++start;
-	while (*start && *start == '0')
-		++start;
+		++decimal;
+	for (start = decimal; *start && *start == '0'; ++start) ;
 	if (*start == '\0' || *start == '.')
 		--start;
-	memmove(decimal + (int)has_sign, start, strlen(start) + 1);
 
-	return decimal;
+	len = strlen(start);
+	memmove(decimal, start, len);
+	for (start = decimal + len; *start; ++start)
+		*start = '\0';
 }
