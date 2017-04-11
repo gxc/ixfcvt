@@ -1,7 +1,7 @@
 /*
  * main.c - parse arguments and open files
  *
- * Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>
+ * Copyright 2016,2017 Guo, Xingchun <guoxingchun@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@
 #include "util.h"
 
 #ifdef DEBUG
-#define VERSION "0.75 <debug>"
+	#define VERSION "0.80 <debug>"
 #else
-#define VERSION "0.75"
+	#define VERSION "0.80"
 #endif
 
 #define MAX_COMMIT_SIZE 0xFFFF
@@ -51,7 +51,7 @@ DATE, TIME, TIMESTAMP\n\
 Project on GitHub: <https://github.com/gxc/ixfcvt>\n\
 Report bugs to <https://github.com/gxc/ixfcvt/issues>\n\
 \n\
-Copyright 2016 Guo, Xingchun <guoxingchun@gmail.com>\n\
+Copyright 2016,2017 Guo, Xingchun <guoxingchun@gmail.com>\n\
 \n\
 Licensed under the Apache License, Version 2.0 (the \"License\");\n\
 you may not use this file except in compliance with the License.\n\
@@ -168,7 +168,7 @@ Options:\n\
 		usage(EXIT_FAILURE, USAGE_INFO, argv[0], VERSION);
 
 	oflags = O_WRONLY | O_CREAT | O_TRUNC;
-	mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+	mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;	/* 0644 */
 	ifd = open_file(ifile, O_RDONLY, 0);
 	if (!lock_entire_file(ifd, F_RDLCK))
 		ignore_lock_fail_or_exit(ifile);
@@ -196,7 +196,8 @@ Options:\n\
 	if (ofd != STDOUT_FILENO)
 		err_msg("%s\r", "Preparing...");
 	get_ixf_summary(ifd, &sum);
-	parse_and_output(ifd, ofd, cfd, &sum);
+	if (sum.s_ccnt > 0)
+		parse_and_output(ifd, ofd, cfd, &sum);
 
 	close_file(ifd);
 	close_file(ofd);
